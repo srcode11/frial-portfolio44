@@ -195,7 +195,7 @@ async function loadData() {
             const docRef = window.firebaseDb.collection('portfolio').doc('data');
             const docSnap = await docRef.get();
             
-            if (docSnap.exists()) {
+            if (docSnap.exists) {  // بدون أقواس
                 portfolioData = docSnap.data();
                 console.log('✅ تم تحميل البيانات من Firebase');
                 updateConnectionStatus('متصل بـ Firebase');
@@ -212,6 +212,26 @@ async function loadData() {
     } catch (error) {
         console.warn('❌ Firebase فشل، جاري استخدام التخزين المحلي:', error);
         
+        // استخدام التخزين المحلي
+        try {
+            const savedData = localStorage.getItem('teacherPortfolio');
+            if (savedData) {
+                portfolioData = JSON.parse(savedData);
+                console.log('✅ تم تحميل البيانات من التخزين المحلي');
+                updateConnectionStatus('محلي');
+            }
+        } catch (localError) {
+            console.error('❌ فشل تحميل البيانات المحلية:', localError);
+            updateConnectionStatus('غير متصل');
+        }
+    }
+    
+    // تحديث الواجهة
+    updateDashboard();
+    updateBadges();
+    
+    showToast('تم تحميل البيانات بنجاح', 'success');
+}     
         // استخدام التخزين المحلي
         try {
             const savedData = localStorage.getItem('teacherPortfolioData');

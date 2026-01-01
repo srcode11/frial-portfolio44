@@ -1,5 +1,5 @@
-// Teacher Portfolio System - Complete Working System
-console.log('🌟 نظام ملف الإنجاز - جاهز للعمل');
+// Teacher Portfolio System - Firebase Storage Solution
+console.log('🌟 نظام ملف الإنجاز - النسخة المحسنة');
 
 // Global Variables
 let portfolioData = {
@@ -12,17 +12,18 @@ let portfolioData = {
 };
 
 let currentTab = 'dashboard';
-let isAdmin = true; // اجعل الجميع مسؤولين مؤقتاً
+let isAdmin = true;
+let currentUser = null;
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 بدء تهيئة التطبيق...');
     
+    // Initialize Firebase
+    initFirebase();
+    
     // Setup Event Listeners
     setupEventListeners();
-    
-    // Load Data
-    loadData();
     
     // Setup Theme
     setupTheme();
@@ -32,6 +33,34 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('✅ التطبيق جاهز للاستخدام');
 });
+
+// Initialize Firebase
+async function initFirebase() {
+    try {
+        if (!window.firebaseAuth) {
+            console.log('⚠️ Firebase غير متاح، جاري استخدام التخزين المحلي');
+            loadFromLocalStorage();
+            return;
+        }
+        
+        // تسجيل الدخول كضيف
+        await window.firebaseAuth.signInAnonymously();
+        
+        window.firebaseAuth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                console.log('🔐 تم تسجيل الدخول:', user.uid);
+                updateConnectionStatus('متصل');
+                loadDataFromFirebase();
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ خطأ في تهيئة Firebase:', error);
+        loadFromLocalStorage();
+        updateConnectionStatus('محلي');
+    }
+}
 
 // Setup Event Listeners
 function setupEventListeners() {
@@ -53,7 +82,7 @@ function setupEventListeners() {
             e.preventDefault();
             const tab = this.getAttribute('data-tab');
             switchTab(tab);
-            toggleSidebar(); // إغلاق السايدبار بعد الاختيار
+            toggleSidebar();
         });
     });
     
@@ -65,12 +94,17 @@ function setupEventListeners() {
         showToast(`الوضع ${isDark ? 'الداكن' : 'الفاتح'} مفعل`, 'success');
     });
     
+    // Auto Backup Toggle
+    document.getElementById('autoBackup').addEventListener('change', function() {
+        localStorage.setItem('autoBackup', this.checked);
+        showToast(`النسخ الاحتياطي التلقائي ${this.checked ? 'مفعل' : 'معطل'}`, 'success');
+    });
+    
     console.log('✅ تم إعداد المستمعين للأحداث');
 }
 
 // Setup Sidebar
 function setupSidebar() {
-    // Close sidebar when clicking outside
     document.addEventListener('click', function(e) {
         const sidebar = document.getElementById('sidebar');
         const menuToggle = document.getElementById('menuToggle');
@@ -132,7 +166,7 @@ function toggleTheme() {
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
-            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+            console.log(`❌ خطأ في تفعيل وضع ملء الشاشة: ${err.message}`);
         });
     } else {
         if (document.exitFullscreen) {
@@ -141,96 +175,32 @@ function toggleFullscreen() {
     }
 }
 
-// Switch Tabs
-function switchTab(tabId) {
-    console.log(`🔄 الانتقال إلى: ${getTabName(tabId)}`);
-    
-    // Update active menu item
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.getAttribute('data-tab') === tabId) {
-            item.classList.add('active');
-        }
-    });
-    
-    // Update tab content
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-        if (content.id === tabId) {
-            content.classList.add('active');
-        }
-    });
-    
-    currentTab = tabId;
-    
-    // Load section data if needed
-    if (tabId === 'fullPortfolio') {
-        loadFullPortfolio();
-    } else if (tabId === 'reports') {
-        generateReports();
-    } else if (tabId !== 'dashboard' && tabId !== 'settings') {
-        loadSectionData(tabId);
-    }
-    
-    showToast(`تم الانتقال إلى ${getTabName(tabId)}`, 'info');
-}
-
-// Get Tab Name
-function getTabName(tabId) {
-    const names = {
-        dashboard: 'الرئيسية',
-        fullPortfolio: 'الملف الكامل',
-        arabic: 'اللغة العربية',
-        english: 'اللغة الإنجليزية',
-        quran: 'القرآن الكريم',
-        math: 'الرياضيات',
-        science: 'العلوم',
-        activities: 'النشاطات',
-        reports: 'التقارير',
-        settings: 'الإعدادات'
-    };
-    return names[tabId] || tabId;
-}
-
-// Load Data
-async function loadData() {
-    console.log('📥 جاري تحميل البيانات...');
+// Load Data from Firebase
+async function loadDataFromFirebase() {
+    console.log('📥 جاري تحميل البيانات من Firebase...');
     
     try {
-        // Try Firebase first
-        if (window.firebaseDb) {
-            try {
-                const docRef = window.firebaseDb.collection('portfolio').doc('data');
-                const docSnap = await docRef.get();
-                
-                if (docSnap.exists) {
-                    portfolioData = docSnap.data();
-                    console.log('✅ تم تحميل البيانات من Firebase');
-                    updateConnectionStatus('متصل');
-                } else {
-                    // Create new document
-                    await docRef.set(portfolioData);
-                    console.log('📝 تم إنشاء مستند جديد في Firebase');
-                    updateConnectionStatus('جديد');
-                }
-            } catch (firebaseError) {
-                console.warn('❌ Firebase فشل، جاري استخدام التخزين المحلي:', firebaseError);
-                loadFromLocalStorage();
-            }
+        const docRef = window.firebaseDb.collection('portfolio').doc('data');
+        const docSnap = await docRef.get();
+        
+        if (docSnap.exists) {
+            portfolioData = docSnap.data();
+            console.log('✅ تم تحميل البيانات من Firebase');
+            updateDashboard();
+            updateMenuBadges();
+            loadRecentActivity();
+            updateConnectionStatus('متصل');
+            showToast('تم تحميل البيانات من السحابة', 'success');
         } else {
-            loadFromLocalStorage();
+            // إنشاء مستند جديد
+            await docRef.set(portfolioData);
+            console.log('📝 تم إنشاء مستند جديد في Firebase');
+            updateConnectionStatus('جديد');
         }
         
-        // Update UI
-        updateDashboard();
-        updateMenuBadges();
-        loadRecentActivity();
-        
-        showToast('تم تحميل البيانات بنجاح', 'success');
-        
     } catch (error) {
-        console.error('❌ خطأ في تحميل البيانات:', error);
-        showToast('خطأ في تحميل البيانات', 'error');
+        console.error('❌ خطأ في تحميل البيانات من Firebase:', error);
+        loadFromLocalStorage();
         updateConnectionStatus('محلي');
     }
 }
@@ -241,10 +211,11 @@ function loadFromLocalStorage() {
     if (localData) {
         portfolioData = JSON.parse(localData);
         console.log('✅ تم تحميل البيانات من التخزين المحلي');
-        updateConnectionStatus('محلي');
+        updateDashboard();
+        updateMenuBadges();
+        loadRecentActivity();
     } else {
-        console.log('📝 لا توجد بيانات محلية، سيتم إنشاء ملف جديد');
-        updateConnectionStatus('جديد');
+        console.log('📝 لا توجد بيانات محلية');
     }
 }
 
@@ -265,16 +236,58 @@ function updateConnectionStatus(status) {
     }
 }
 
+// Switch Tabs
+function switchTab(tabId) {
+    console.log(`🔄 الانتقال إلى: ${getTabName(tabId)}`);
+    
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('data-tab') === tabId) {
+            item.classList.add('active');
+        }
+    });
+    
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+        if (content.id === tabId) {
+            content.classList.add('active');
+        }
+    });
+    
+    currentTab = tabId;
+    
+    if (tabId === 'fullPortfolio') {
+        loadFullPortfolio();
+    } else if (tabId === 'reports') {
+        generateReports();
+    } else if (tabId !== 'dashboard' && tabId !== 'settings') {
+        loadSectionData(tabId);
+    }
+}
+
+// Get Tab Name
+function getTabName(tabId) {
+    const names = {
+        dashboard: 'الرئيسية',
+        fullPortfolio: 'الملف الكامل',
+        arabic: 'اللغة العربية',
+        english: 'اللغة الإنجليزية',
+        quran: 'القرآن الكريم',
+        math: 'الرياضيات',
+        science: 'العلوم',
+        activities: 'النشاطات',
+        reports: 'التقارير',
+        settings: 'الإعدادات'
+    };
+    return names[tabId] || tabId;
+}
+
 // Update Dashboard
 function updateDashboard() {
-    console.log('📊 تحديث الشاشة الرئيسية...');
-    
-    // Calculate totals
     const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
     const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
-        sum + arr.reduce((imgSum, item) => imgSum + (item.images ? item.images.length : 0), 0), 0);
+        sum + arr.reduce((imgSum, item) => imgSum + (item.imageUrls ? item.imageUrls.length : 0), 0), 0);
     
-    // This month items
     const currentMonth = new Date().getMonth();
     const thisMonthItems = Object.values(portfolioData).reduce((sum, arr) => 
         sum + arr.filter(item => {
@@ -282,10 +295,8 @@ function updateDashboard() {
             return itemDate.getMonth() === currentMonth;
         }).length, 0);
     
-    // Completion rate (assuming goal is 50 items)
     const completionRate = Math.min(100, Math.floor((totalItems / 50) * 100));
     
-    // Update DOM
     document.getElementById('totalItems').textContent = totalItems;
     document.getElementById('totalImages').textContent = totalImages;
     document.getElementById('thisMonth').textContent = thisMonthItems;
@@ -310,7 +321,6 @@ function loadRecentActivity() {
     const container = document.getElementById('recentActivity');
     if (!container) return;
     
-    // Get all items sorted by timestamp
     const allItems = [];
     Object.keys(portfolioData).forEach(subject => {
         portfolioData[subject].forEach(item => {
@@ -321,13 +331,10 @@ function loadRecentActivity() {
         });
     });
     
-    // Sort by timestamp (newest first)
     allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     
-    // Take latest 5
     const recentItems = allItems.slice(0, 5);
     
-    // Clear container
     container.innerHTML = '';
     
     if (recentItems.length === 0) {
@@ -341,7 +348,6 @@ function loadRecentActivity() {
         return;
     }
     
-    // Add items
     recentItems.forEach(item => {
         const activity = document.createElement('div');
         activity.className = 'recent-item';
@@ -393,8 +399,6 @@ function getSubjectName(subject) {
 
 // Show Add Modal
 function showAddModal(subject = 'quick') {
-    console.log(`➕ عرض نافذة الإضافة لـ: ${subject}`);
-    
     const titles = {
         quick: 'إضافة سريعة',
         arabic: 'إضافة حرف عربي',
@@ -408,7 +412,6 @@ function showAddModal(subject = 'quick') {
     document.getElementById('modalTitle').textContent = titles[subject] || 'إضافة عنصر جديد';
     document.getElementById('modalSubject').value = subject;
     
-    // Reset form
     document.getElementById('addForm').reset();
     document.getElementById('imagePreview1').innerHTML = `
         <i class="fas fa-camera"></i>
@@ -421,7 +424,6 @@ function showAddModal(subject = 'quick') {
         <small>انقر لاختيار صورة</small>
     `;
     
-    // Show modal
     document.getElementById('addModal').style.display = 'flex';
 }
 
@@ -435,7 +437,6 @@ function previewImage(input, previewId) {
     const file = input.files[0];
     if (!file) return;
     
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
         showToast('حجم الصورة كبير جداً (الحد الأقصى 5MB)', 'error');
         input.value = '';
@@ -450,10 +451,8 @@ function previewImage(input, previewId) {
     reader.readAsDataURL(file);
 }
 
-// Save Item
+// Save Item - الحل الجديد
 async function saveItem() {
-    console.log('💾 حفظ العنصر...');
-    
     const subject = document.getElementById('modalSubject').value;
     const title = document.getElementById('itemTitle').value.trim();
     const description = document.getElementById('itemDescription').value.trim();
@@ -466,16 +465,17 @@ async function saveItem() {
     try {
         showToast('جارٍ حفظ العنصر...', 'info');
         
-        // Create item object
+        // إنشاء العنصر الأساسي بدون الصور
         const item = {
             id: Date.now().toString(),
             timestamp: Date.now(),
             date: formatDate(new Date()),
             title: title,
-            description: description
+            description: description,
+            imageUrls: [] // سنخزن روابط الصور فقط
         };
         
-        // Add specific fields based on subject
+        // إضافة الحقول الخاصة
         if (subject === 'arabic') {
             item.letter = title;
         } else if (subject === 'english') {
@@ -486,26 +486,23 @@ async function saveItem() {
             item.concept = title;
         }
         
-        // Handle image uploads
-        item.images = [];
-        
+        // رفع الصور إلى Firebase Storage
         const image1 = document.getElementById('imageFile1').files[0];
         const image2 = document.getElementById('imageFile2').files[0];
         
         if (image1) {
-            const url1 = await uploadImage(image1);
-            if (url1) item.images.push(url1);
+            const url1 = await uploadImageToFirebaseStorage(image1);
+            if (url1) item.imageUrls.push(url1);
         }
         
         if (image2) {
-            const url2 = await uploadImage(image2);
-            if (url2) item.images.push(url2);
+            const url2 = await uploadImageToFirebaseStorage(image2);
+            if (url2) item.imageUrls.push(url2);
         }
         
-        // Determine which subject to add to
+        // تحديد القسم المستهدف
         let targetSubject = subject;
         if (subject === 'quick') {
-            // Ask user which subject
             targetSubject = prompt('أدخل اسم القسم (arabic, english, quran, math, science, activities):', 'arabic');
             if (!targetSubject || !portfolioData.hasOwnProperty(targetSubject)) {
                 showToast('اسم القسم غير صحيح', 'error');
@@ -513,25 +510,13 @@ async function saveItem() {
             }
         }
         
-        // Add to portfolio data
+        // إضافة إلى البيانات المحلية
         portfolioData[targetSubject].push(item);
         
-        // Save to Firebase
-        if (window.firebaseDb) {
-            try {
-                await window.firebaseDb.collection('portfolio').doc('data').update({
-                    [targetSubject]: portfolioData[targetSubject]
-                });
-                console.log('✅ تم الحفظ في Firebase');
-            } catch (error) {
-                console.warn('❌ فشل الحفظ في Firebase:', error);
-            }
-        }
+        // حفظ في Firebase - فقط البيانات النصية وروابط الصور
+        await saveToFirebase();
         
-        // Save to localStorage
-        saveToLocalStorage();
-        
-        // Update UI
+        // تحديث الواجهة
         updateDashboard();
         updateMenuBadges();
         loadRecentActivity();
@@ -539,7 +524,7 @@ async function saveItem() {
             loadSectionData(targetSubject);
         }
         
-        // Close modal and show success
+        // إغلاق النافذة وعرض النجاح
         closeModal('addModal');
         showToast('تم إضافة العنصر بنجاح', 'success');
         
@@ -549,31 +534,145 @@ async function saveItem() {
     }
 }
 
-// Upload Image
-async function uploadImage(file) {
+// رفع الصورة إلى Firebase Storage
+async function uploadImageToFirebaseStorage(file) {
     try {
-        // For now, use base64 for local storage
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                resolve(e.target.result);
-            };
-            reader.readAsDataURL(file);
-        });
+        if (!window.firebaseStorage || !currentUser) {
+            console.log('⚠️ Firebase Storage غير متاح، جاري استخدام التخزين المحلي للصور');
+            return await uploadImageToLocalStorage(file);
+        }
+        
+        // إنشاء اسم فريد للصورة
+        const timestamp = Date.now();
+        const randomString = Math.random().toString(36).substring(2, 15);
+        const fileName = `images/${currentUser.uid}/${timestamp}_${randomString}_${file.name}`;
+        
+        // رفع الصورة إلى Storage
+        const storageRef = window.firebaseStorage.ref(fileName);
+        await storageRef.put(file);
+        
+        // الحصول على رابط التحميل
+        const downloadURL = await storageRef.getDownloadURL();
+        
+        console.log('✅ تم رفع الصورة إلى Firebase Storage:', downloadURL);
+        return downloadURL;
         
     } catch (error) {
-        console.warn('❌ فشل رفع الصورة:', error);
-        return null;
+        console.error('❌ خطأ في رفع الصورة إلى Firebase Storage:', error);
+        // التراجع إلى التخزين المحلي
+        return await uploadImageToLocalStorage(file);
     }
 }
 
-// Save to Local Storage
+// رفع الصورة إلى التخزين المحلي (كبديل)
+async function uploadImageToLocalStorage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // حفظ الصورة في localStorage كـ base64
+            const imageId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem(imageId, e.target.result);
+            
+            // تخزين المعرف فقط في البيانات
+            resolve(`local:${imageId}`);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// حفظ البيانات في Firebase
+async function saveToFirebase() {
+    try {
+        if (!window.firebaseDb || !currentUser) {
+            console.log('⚠️ Firebase غير متاح، جاري استخدام التخزين المحلي');
+            saveToLocalStorage();
+            return;
+        }
+        
+        // حفظ كل قسم على حدة لتجنب مشكلة الحجم
+        const batch = window.firebaseDb.batch();
+        const portfolioRef = window.firebaseDb.collection('portfolio').doc('data');
+        
+        // تحديث كل قسم في Firebase
+        Object.keys(portfolioData).forEach(subject => {
+            const subjectRef = window.firebaseDb.collection('portfolio').doc(subject);
+            batch.set(subjectRef, {
+                items: portfolioData[subject],
+                lastUpdated: new Date(),
+                count: portfolioData[subject].length
+            }, { merge: true });
+        });
+        
+        // حفظ معلومات موجزة في المستند الرئيسي
+        const summary = {
+            lastUpdated: new Date(),
+            totalItems: Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0),
+            subjects: Object.keys(portfolioData).map(subject => ({
+                name: subject,
+                count: portfolioData[subject].length
+            }))
+        };
+        
+        batch.set(portfolioRef, summary, { merge: true });
+        
+        await batch.commit();
+        console.log('✅ تم الحفظ في Firebase بنجاح');
+        
+    } catch (error) {
+        console.error('❌ خطأ في الحفظ في Firebase:', error);
+        
+        // محاولة الطريقة البديلة: حفظ كل قسم في مستند منفصل
+        if (error.code === 'resource-exhausted') {
+            await saveToFirebaseAlternative();
+        } else {
+            saveToLocalStorage();
+        }
+    }
+}
+
+// طريقة بديلة للحفظ في Firebase (كل قسم في مستند منفصل)
+async function saveToFirebaseAlternative() {
+    try {
+        const promises = Object.keys(portfolioData).map(async (subject) => {
+            const subjectRef = window.firebaseDb.collection('portfolio').doc(subject);
+            await subjectRef.set({
+                items: portfolioData[subject],
+                lastUpdated: new Date(),
+                count: portfolioData[subject].length
+            }, { merge: true });
+        });
+        
+        await Promise.all(promises);
+        console.log('✅ تم الحفظ في Firebase باستخدام الطريقة البديلة');
+        
+    } catch (error) {
+        console.error('❌ خطأ في الحفظ بالطريقة البديلة:', error);
+        saveToLocalStorage();
+    }
+}
+
+// حفظ في التخزين المحلي
 function saveToLocalStorage() {
     try {
         localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
         console.log('✅ تم الحفظ في التخزين المحلي');
+        
+        // تخزين الصور المنفصلة إذا كانت موجودة
+        Object.values(portfolioData).forEach(items => {
+            items.forEach(item => {
+                if (item.imageUrls) {
+                    item.imageUrls.forEach((url, index) => {
+                        if (url.startsWith('local:')) {
+                            const imageId = url.replace('local:', '');
+                            // الصورة مخزنة بالفعل في localStorage
+                        }
+                    });
+                }
+            });
+        });
+        
     } catch (error) {
-        console.warn('❌ فشل الحفظ في التخزين المحلي:', error);
+        console.error('❌ خطأ في الحفظ في التخزين المحلي:', error);
     }
 }
 
@@ -583,8 +682,6 @@ function loadSectionData(subject) {
     if (!container) return;
     
     const items = portfolioData[subject] || [];
-    
-    // Clear container
     container.innerHTML = '';
     
     if (items.length === 0) {
@@ -602,10 +699,8 @@ function loadSectionData(subject) {
         return;
     }
     
-    // Sort items by timestamp (newest first)
     items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     
-    // Add items
     items.forEach(item => {
         const card = document.createElement('div');
         card.className = 'item-card';
@@ -613,34 +708,113 @@ function loadSectionData(subject) {
         const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
         const date = item.date || formatDate(new Date(item.timestamp));
         
+        // معالجة روابط الصور
+        let imagesHTML = '';
+        if (item.imageUrls && item.imageUrls.length > 0) {
+            imagesHTML = `
+                <div class="item-images">
+                    ${item.imageUrls.map((url, index) => {
+                        let imageUrl = url;
+                        if (url.startsWith('local:')) {
+                            const imageId = url.replace('local:', '');
+                            imageUrl = localStorage.getItem(imageId) || '';
+                        }
+                        return imageUrl ? `
+                            <div class="item-image" onclick="viewImage('${imageUrl}')">
+                                <img src="${imageUrl}" alt="الصورة ${index + 1}">
+                            </div>
+                        ` : `
+                            <div class="item-image empty">
+                                <i class="fas fa-image"></i>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        } else {
+            imagesHTML = `
+                <div class="item-images">
+                    <div class="item-image empty"><i class="fas fa-image"></i></div>
+                    <div class="item-image empty"><i class="fas fa-image"></i></div>
+                </div>
+            `;
+        }
+        
         card.innerHTML = `
             <div class="item-header">
                 <div>
                     <div class="item-title">${title}</div>
                     <div class="item-date">${date}</div>
                 </div>
+                <div class="item-actions">
+                    <button class="btn-icon" onclick="deleteItem('${subject}', '${item.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             </div>
             <div class="item-body">
                 <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
-                <div class="item-images">
-                    <div class="item-image" onclick="viewImage('${item.images?.[0] || ''}')">
-                        ${item.images && item.images[0] ? 
-                            `<img src="${item.images[0]}" alt="الصورة الأولى">` : 
-                            '<div class="item-image empty"><i class="fas fa-image"></i></div>'
-                        }
-                    </div>
-                    <div class="item-image" onclick="viewImage('${item.images?.[1] || ''}')">
-                        ${item.images && item.images[1] ? 
-                            `<img src="${item.images[1]}" alt="الصورة الثانية">` : 
-                            '<div class="item-image empty"><i class="fas fa-image"></i></div>'
-                        }
-                    </div>
-                </div>
+                ${imagesHTML}
             </div>
         `;
         
         container.appendChild(card);
     });
+}
+
+// Delete Item
+async function deleteItem(subject, itemId) {
+    if (!confirm('هل أنت متأكد من حذف هذا العنصر؟')) {
+        return;
+    }
+    
+    try {
+        showToast('جارٍ حذف العنصر...', 'info');
+        
+        // البحث عن العنصر
+        const itemIndex = portfolioData[subject].findIndex(item => item.id === itemId);
+        if (itemIndex === -1) {
+            showToast('العنصر غير موجود', 'error');
+            return;
+        }
+        
+        const item = portfolioData[subject][itemIndex];
+        
+        // حذف الصور من Firebase Storage إذا كانت موجودة
+        if (item.imageUrls) {
+            for (const imageUrl of item.imageUrls) {
+                if (imageUrl.startsWith('https://')) {
+                    try {
+                        const storageRef = window.firebaseStorage.refFromURL(imageUrl);
+                        await storageRef.delete();
+                    } catch (error) {
+                        console.warn('❌ خطأ في حذف الصورة من Storage:', error);
+                    }
+                } else if (imageUrl.startsWith('local:')) {
+                    const imageId = imageUrl.replace('local:', '');
+                    localStorage.removeItem(imageId);
+                }
+            }
+        }
+        
+        // حذف من البيانات المحلية
+        portfolioData[subject].splice(itemIndex, 1);
+        
+        // حفظ التغييرات
+        await saveToFirebase();
+        
+        // تحديث الواجهة
+        updateDashboard();
+        updateMenuBadges();
+        loadRecentActivity();
+        loadSectionData(subject);
+        
+        showToast('تم حذف العنصر بنجاح', 'success');
+        
+    } catch (error) {
+        console.error('❌ خطأ في حذف العنصر:', error);
+        showToast('خطأ في حذف العنصر', 'error');
+    }
 }
 
 // Load Full Portfolio
@@ -650,12 +824,14 @@ function loadFullPortfolio() {
     
     container.innerHTML = '';
     
-    // Create sections for each subject
     const subjects = ['arabic', 'english', 'quran', 'math', 'science', 'activities'];
+    let hasItems = false;
     
     subjects.forEach(subject => {
         const items = portfolioData[subject] || [];
         if (items.length === 0) return;
+        
+        hasItems = true;
         
         const section = document.createElement('div');
         section.className = 'subject-section';
@@ -671,7 +847,6 @@ function loadFullPortfolio() {
         
         container.appendChild(section);
         
-        // Load items for this section
         const itemsContainer = document.getElementById(`full-${subject}`);
         if (itemsContainer) {
             items.forEach(item => {
@@ -680,6 +855,26 @@ function loadFullPortfolio() {
                 
                 const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
                 const date = item.date || formatDate(new Date(item.timestamp));
+                
+                let imagesHTML = '';
+                if (item.imageUrls && item.imageUrls.length > 0) {
+                    imagesHTML = `
+                        <div class="item-images">
+                            ${item.imageUrls.map((url, index) => {
+                                let imageUrl = url;
+                                if (url.startsWith('local:')) {
+                                    const imageId = url.replace('local:', '');
+                                    imageUrl = localStorage.getItem(imageId) || '';
+                                }
+                                return imageUrl ? `
+                                    <div class="item-image" onclick="viewImage('${imageUrl}')">
+                                        <img src="${imageUrl}" alt="الصورة ${index + 1}">
+                                    </div>
+                                ` : '';
+                            }).join('')}
+                        </div>
+                    `;
+                }
                 
                 card.innerHTML = `
                     <div class="item-header">
@@ -690,15 +885,7 @@ function loadFullPortfolio() {
                     </div>
                     <div class="item-body">
                         <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
-                        ${item.images && item.images.length > 0 ? `
-                            <div class="item-images">
-                                ${item.images.map((img, index) => `
-                                    <div class="item-image" onclick="viewImage('${img}')">
-                                        <img src="${img}" alt="الصورة ${index + 1}">
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
+                        ${imagesHTML}
                     </div>
                 `;
                 
@@ -707,8 +894,7 @@ function loadFullPortfolio() {
         }
     });
     
-    // If no items at all
-    if (container.innerHTML === '') {
+    if (!hasItems) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-book-open"></i>
@@ -728,6 +914,16 @@ function viewImage(imageUrl) {
     if (!imageUrl) {
         showToast('لا توجد صورة', 'warning');
         return;
+    }
+    
+    // إذا كانت الصورة من التخزين المحلي
+    if (imageUrl.startsWith('local:')) {
+        const imageId = imageUrl.replace('local:', '');
+        imageUrl = localStorage.getItem(imageId);
+        if (!imageUrl) {
+            showToast('الصورة غير موجودة', 'error');
+            return;
+        }
     }
     
     const modal = document.getElementById('imagePreviewModal');
@@ -753,6 +949,7 @@ function handlePrint() {
     
     if (option === 'current') {
         if (currentTab === 'fullPortfolio') {
+            loadFullPortfolio();
             content = document.getElementById('fullPortfolioContainer').innerHTML;
             title = 'الملف الكامل - ' + title;
         } else if (currentTab !== 'dashboard' && currentTab !== 'settings' && currentTab !== 'reports') {
@@ -765,7 +962,6 @@ function handlePrint() {
         title = 'الملف الكامل - ' + title;
     }
     
-    // Create print window
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
         <html dir="rtl">
@@ -828,7 +1024,6 @@ function handlePrint() {
     `);
     
     printWindow.document.close();
-    
     closeModal('printModal');
     showToast('جاري تحضير الطباعة', 'info');
 }
@@ -867,7 +1062,24 @@ function exportSection(subject) {
 
 // Backup Data
 function backupData() {
-    const dataStr = JSON.stringify(portfolioData, null, 2);
+    // إنشاء نسخة بدون الصور الكبيرة
+    const backupData = JSON.parse(JSON.stringify(portfolioData));
+    
+    // إزالة بيانات الصور الكبيرة
+    Object.values(backupData).forEach(items => {
+        items.forEach(item => {
+            if (item.imageUrls) {
+                item.imageUrls = item.imageUrls.map(url => {
+                    if (url.startsWith('local:')) {
+                        return url; // نحتفظ بمعرفات الصور المحلية فقط
+                    }
+                    return url; // نحتفظ بروابط Firebase
+                });
+            }
+        });
+    });
+    
+    const dataStr = JSON.stringify(backupData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
     const exportFileDefaultName = `teacher-portfolio-backup-${new Date().toISOString().split('T')[0]}.json`;
@@ -893,11 +1105,18 @@ function restoreBackup() {
         reader.onload = function(e) {
             try {
                 portfolioData = JSON.parse(e.target.result);
+                
+                // حفظ البيانات المستعادة
                 saveToLocalStorage();
+                if (window.firebaseDb && currentUser) {
+                    saveToFirebase();
+                }
+                
                 updateDashboard();
                 updateMenuBadges();
                 loadRecentActivity();
                 showToast('تم استعادة النسخة الاحتياطية بنجاح', 'success');
+                
             } catch (error) {
                 showToast('خطأ في استعادة النسخة', 'error');
             }
@@ -911,7 +1130,32 @@ function restoreBackup() {
 
 // Clear All Data
 function clearAllData() {
-    if (confirm('هل أنت متأكد من حذف جميع البيانات؟ هذه العملية لا يمكن التراجع عنها.')) {
+    if (!confirm('هل أنت متأكد من حذف جميع البيانات؟ هذه العملية لا يمكن التراجع عنها.')) {
+        return;
+    }
+    
+    if (confirm('⚠️ تحذير: سيتم حذف جميع الصور أيضاً. هل تريد المتابعة؟')) {
+        // حذف جميع الصور من Firebase Storage
+        if (window.firebaseStorage && currentUser) {
+            Object.values(portfolioData).forEach(items => {
+                items.forEach(item => {
+                    if (item.imageUrls) {
+                        item.imageUrls.forEach(url => {
+                            if (url.startsWith('https://')) {
+                                try {
+                                    const storageRef = window.firebaseStorage.refFromURL(url);
+                                    storageRef.delete();
+                                } catch (error) {
+                                    console.warn('❌ خطأ في حذف الصورة:', error);
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        }
+        
+        // حذف البيانات
         portfolioData = {
             arabic: [],
             english: [],
@@ -921,7 +1165,13 @@ function clearAllData() {
             activities: []
         };
         
+        // الحفظ
         saveToLocalStorage();
+        if (window.firebaseDb && currentUser) {
+            saveToFirebase();
+        }
+        
+        // تحديث الواجهة
         updateDashboard();
         updateMenuBadges();
         loadRecentActivity();
@@ -943,7 +1193,7 @@ function generateReports() {
     
     const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
     const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
-        sum + arr.reduce((imgSum, item) => imgSum + (item.images ? item.images.length : 0), 0), 0);
+        sum + arr.reduce((imgSum, item) => imgSum + (item.imageUrls ? item.imageUrls.length : 0), 0), 0);
     
     container.innerHTML = `
         <div class="section-card">
@@ -1005,72 +1255,7 @@ function generateReports() {
                 `).join('')}
             </div>
         </div>
-        
-        <div class="section-card">
-            <h2 class="section-title">
-                <i class="fas fa-history"></i>
-                آخر التحديثات
-            </h2>
-            <div class="recent-list" id="reportRecentActivity"></div>
-        </div>
     `;
-    
-    // Load recent activity for report
-    loadReportRecentActivity();
-}
-
-// Load Report Recent Activity
-function loadReportRecentActivity() {
-    const container = document.getElementById('reportRecentActivity');
-    if (!container) return;
-    
-    // Get all items sorted by timestamp
-    const allItems = [];
-    Object.keys(portfolioData).forEach(subject => {
-        portfolioData[subject].forEach(item => {
-            allItems.push({
-                ...item,
-                subject: subject
-            });
-        });
-    });
-    
-    // Sort by timestamp (newest first)
-    allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    
-    // Take latest 10
-    const recentItems = allItems.slice(0, 10);
-    
-    // Clear container
-    container.innerHTML = '';
-    
-    if (recentItems.length === 0) {
-        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);">لا توجد نشاطات</p>';
-        return;
-    }
-    
-    // Add items
-    recentItems.forEach(item => {
-        const activity = document.createElement('div');
-        activity.className = 'recent-item';
-        
-        const icon = getSubjectIcon(item.subject);
-        const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
-        const time = item.date || formatDate(new Date(item.timestamp));
-        
-        activity.innerHTML = `
-            <div class="recent-icon">
-                <i class="${icon}"></i>
-            </div>
-            <div class="recent-content">
-                <h4>${title}</h4>
-                <p>${getSubjectName(item.subject)}</p>
-            </div>
-            <div class="recent-time">${time}</div>
-        `;
-        
-        container.appendChild(activity);
-    });
 }
 
 // Reset Settings
@@ -1128,7 +1313,6 @@ function showToast(message, type = 'info') {
     
     container.appendChild(toast);
     
-    // Auto remove after 5 seconds
     setTimeout(() => {
         if (toast.parentNode) {
             toast.remove();
@@ -1151,6 +1335,8 @@ window.backupData = backupData;
 window.restoreBackup = restoreBackup;
 window.clearAllData = clearAllData;
 window.resetSettings = resetSettings;
+window.deleteItem = deleteItem;
+window.previewImage = previewImage;
 window.showToast = showToast;
 
 console.log('🎉 النظام جاهز! جميع الميزات تعمل بشكل صحيح.');

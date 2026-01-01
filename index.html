@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ملف إنجاز المعلمة فريال الغماري</title>
     
-    <!-- Font Awesome - نسخة محسنة -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/api/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome - نسخة مستقرة -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
     
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
@@ -53,15 +53,10 @@
         <!-- Top Navigation -->
         <nav class="top-nav">
             <div class="nav-left">
-                <button class="nav-btn menu-toggle" id="menuToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
                 <div class="logo">
                     <i class="fas fa-graduation-cap"></i>
                     <span>ملف الإنجاز</span>
                 </div>
-            </div>
-            <div class="nav-center">
                 <div class="nav-info">
                     <div class="info-item">
                         <i class="fas fa-user"></i>
@@ -71,40 +66,27 @@
                         <i class="fas fa-school"></i>
                         <span>ابتدائية النخبة</span>
                     </div>
-                    <div class="info-item" id="connectionStatusItem">
-                        <i class="fas fa-wifi"></i>
-                        <span id="connectionStatus">محلي</span>
-                    </div>
                 </div>
             </div>
             <div class="nav-right">
                 <button class="nav-btn" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
+                <button class="nav-btn" id="adminBtn">
+                    <i class="fas fa-user-shield"></i>
+                </button>
                 <div class="user-profile">
-                    <img src="https://ui-avatars.com/api/?name=فريال+الغماري&background=4A6FA5&color=fff&size=128" 
-                         alt="المعلمة فريال" 
-                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234A6FA5%22/><text x=%2250%22 y=%2255%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22white%22>ف</text></svg>'">
+                    <div class="profile-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <!-- Sidebar - على اليسار -->
-        <aside class="sidebar" id="sidebar">
+        <!-- Sidebar -->
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="sidebar-user">
-                    <div class="user-avatar">
-                        <img src="https://ui-avatars.com/api/?name=فريال+الغماري&background=4A6FA5&color=fff&size=128" 
-                             alt="فريال الغماري">
-                    </div>
-                    <div class="user-info">
-                        <h4>فريال الغماري</h4>
-                        <p>معلمة الصفوف الأولية</p>
-                    </div>
-                </div>
-                <button class="sidebar-close" id="sidebarClose">
-                    <i class="fas fa-times"></i>
-                </button>
+                <h3><i class="fas fa-th-large"></i> القائمة الرئيسية</h3>
             </div>
             
             <div class="sidebar-menu">
@@ -112,113 +94,93 @@
                     <i class="fas fa-home"></i>
                     <span>الرئيسية</span>
                 </a>
-                <a href="#" class="menu-item" data-tab="fullPortfolio">
-                    <i class="fas fa-book"></i>
-                    <span>الملف الكامل</span>
-                    <span class="menu-badge" id="fullPortfolioBadge">0</span>
-                </a>
                 <a href="#" class="menu-item" data-tab="arabic">
-                    <i class="fas fa-font"></i>
+                    <i class="fas fa-book"></i>
                     <span>اللغة العربية</span>
-                    <span class="menu-badge" id="arabicBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="english">
                     <i class="fas fa-language"></i>
                     <span>الإنجليزية</span>
-                    <span class="menu-badge" id="englishBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="quran">
                     <i class="fas fa-book-quran"></i>
                     <span>القرآن الكريم</span>
-                    <span class="menu-badge" id="quranBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="math">
                     <i class="fas fa-calculator"></i>
                     <span>الرياضيات</span>
-                    <span class="menu-badge" id="mathBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="science">
                     <i class="fas fa-flask"></i>
                     <span>العلوم</span>
-                    <span class="menu-badge" id="scienceBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="activities">
                     <i class="fas fa-chalkboard-teacher"></i>
                     <span>النشاطات</span>
-                    <span class="menu-badge" id="activitiesBadge">0</span>
-                </a>
-                
-                <div class="menu-divider"></div>
-                
-                <a href="#" class="menu-item" data-tab="reports">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>التقارير والإحصائيات</span>
-                </a>
-                <a href="#" class="menu-item" data-tab="settings">
-                    <i class="fas fa-cog"></i>
-                    <span>الإعدادات</span>
                 </a>
             </div>
             
             <div class="sidebar-footer">
-                <button class="btn-primary btn-block" onclick="showAddModal('quick')">
-                    <i class="fas fa-plus-circle"></i>
-                    إضافة سريعة
-                </button>
-                <button class="btn-secondary btn-block mt-10" onclick="showPrintModal()">
-                    <i class="fas fa-print"></i>
-                    طباعة الملف
-                </button>
-                <button class="btn-success btn-block mt-10" onclick="backupData()">
-                    <i class="fas fa-download"></i>
-                    نسخة احتياطية
+                <div class="status-card">
+                    <div class="status-icon online" id="statusIcon"></div>
+                    <div class="status-text">
+                        <small>الاتصال</small>
+                        <span id="connectionStatus">محلي</span>
+                    </div>
+                </div>
+                <button class="btn-backup" id="backupBtn">
+                    <i class="fas fa-database"></i>
+                    <span>نسخة احتياطية</span>
                 </button>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content" id="mainContent">
+        <main class="main-content">
             <!-- Dashboard -->
             <section id="dashboard" class="tab-content active">
                 <div class="content-header">
-                    <h1>مرحباً بعودتك، المعلمة فريال 👋</h1>
-                    <p>هذا هو ملف إنجازك الرقمي المتكامل، يمكنك إدارة جميع أعمالك وأنشطتك التعليمية من هنا</p>
+                    <h1>مرحباً بك، المعلمة فريال 👋</h1>
+                    <p>هذا هو ملف إنجازك الرقمي، يمكنك إدارة جميع أعمالك من هنا</p>
                 </div>
                 
-                <!-- Quick Stats -->
-                <div class="quick-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                            <i class="fas fa-layer-group"></i>
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card gradient-1">
+                        <div class="stat-icon">
+                            <i class="fas fa-book-open"></i>
                         </div>
-                        <div class="stat-info">
+                        <div class="stat-content">
                             <h3 id="totalItems">0</h3>
                             <p>إجمالي العناصر</p>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    
+                    <div class="stat-card gradient-2">
+                        <div class="stat-icon">
                             <i class="fas fa-images"></i>
                         </div>
-                        <div class="stat-info">
+                        <div class="stat-content">
                             <h3 id="totalImages">0</h3>
                             <p>عدد الصور</p>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                            <i class="fas fa-calendar-alt"></i>
+                    
+                    <div class="stat-card gradient-3">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
                         </div>
-                        <div class="stat-info">
+                        <div class="stat-content">
                             <h3 id="thisMonth">0</h3>
                             <p>هذا الشهر</p>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    
+                    <div class="stat-card gradient-4">
+                        <div class="stat-icon">
                             <i class="fas fa-chart-line"></i>
                         </div>
-                        <div class="stat-info">
+                        <div class="stat-content">
                             <h3 id="completionRate">0%</h3>
                             <p>معدل الإنجاز</p>
                         </div>
@@ -226,294 +188,251 @@
                 </div>
                 
                 <!-- Quick Actions -->
-                <div class="section-card">
-                    <h2 class="section-title">
-                        <i class="fas fa-bolt"></i>
-                        إجراءات سريعة
-                    </h2>
-                    <div class="quick-actions-grid">
-                        <button class="action-card" onclick="switchTab('fullPortfolio')">
-                            <div class="action-icon">
-                                <i class="fas fa-book-open"></i>
-                            </div>
-                            <h4>الملف الكامل</h4>
-                            <p>عرض جميع العناصر مع الصور</p>
+                <div class="quick-actions">
+                    <h2>إجراءات سريعة</h2>
+                    <div class="actions-grid">
+                        <button class="action-btn" onclick="switchTab('arabic')">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>إضافة حرف عربي</span>
                         </button>
-                        <button class="action-card" onclick="showAddModal('arabic')">
-                            <div class="action-icon">
-                                <i class="fas fa-font"></i>
-                            </div>
-                            <h4>حرف عربي</h4>
-                            <p>إضافة نشاط لحرف جديد</p>
+                        <button class="action-btn" onclick="switchTab('english')">
+                            <i class="fas fa-plus-square"></i>
+                            <span>إضافة كلمة إنجليزية</span>
                         </button>
-                        <button class="action-card" onclick="showAddModal('english')">
-                            <div class="action-icon">
-                                <i class="fas fa-language"></i>
-                            </div>
-                            <h4>كلمة إنجليزية</h4>
-                            <p>إضافة نشاط لكلمة جديدة</p>
+                        <button class="action-btn" onclick="switchTab('quran')">
+                            <i class="fas fa-plus-hexagon"></i>
+                            <span>إضافة سورة قرآنية</span>
                         </button>
-                        <button class="action-card" onclick="showAddModal('quran')">
-                            <div class="action-icon">
-                                <i class="fas fa-book-quran"></i>
-                            </div>
-                            <h4>سورة قرآنية</h4>
-                            <p>إضافة نشاط لسورة جديدة</p>
+                        <button class="action-btn" onclick="showPrintModal()">
+                            <i class="fas fa-print"></i>
+                            <span>طباعة الملف</span>
                         </button>
-                        <button class="action-card" onclick="showPrintModal()">
-                            <div class="action-icon">
-                                <i class="fas fa-print"></i>
-                            </div>
-                            <h4>طباعة الملف</h4>
-                            <p>طباعة الملف الكامل</p>
+                        <button class="action-btn" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i>
+                            <span>تصدير PDF</span>
                         </button>
-                        <button class="action-card" onclick="backupData()">
-                            <div class="action-icon">
-                                <i class="fas fa-download"></i>
-                            </div>
-                            <h4>نسخة احتياطية</h4>
-                            <p>حفظ نسخة من البيانات</p>
+                        <button class="action-btn" onclick="backupData()">
+                            <i class="fas fa-download"></i>
+                            <span>تنزيل نسخة</span>
                         </button>
                     </div>
                 </div>
                 
                 <!-- Recent Activity -->
-                <div class="section-card">
-                    <div class="section-header">
-                        <h2 class="section-title">
-                            <i class="fas fa-history"></i>
-                            أحدث الإضافات
-                        </h2>
-                        <button class="btn-text" onclick="switchTab('fullPortfolio')">
-                            عرض الكل
-                            <i class="fas fa-arrow-left"></i>
+                <div class="recent-activity">
+                    <div class="activity-header">
+                        <h2>أحدث الإضافات</h2>
+                        <button class="btn-refresh" onclick="loadData()">
+                            <i class="fas fa-sync-alt"></i>
+                            تحديث
                         </button>
                     </div>
-                    <div class="recent-list" id="recentActivity">
+                    <div class="activity-list" id="recentActivity">
                         <!-- سيتم ملؤها بالبيانات -->
                     </div>
-                </div>
-            </section>
-
-            <!-- Full Portfolio Page -->
-            <section id="fullPortfolio" class="tab-content">
-                <div class="content-header">
-                    <h1><i class="fas fa-book-open"></i> الملف الكامل</h1>
-                    <p>عرض جميع المواد والأنشطة مع الصور والتفاصيل في صفحة واحدة</p>
-                </div>
-                
-                <div class="portfolio-controls">
-                    <button class="btn-primary" onclick="printFullPortfolio()">
-                        <i class="fas fa-print"></i>
-                        طباعة الملف الكامل
-                    </button>
-                    <button class="btn-secondary" onclick="exportFullPortfolio()">
-                        <i class="fas fa-file-pdf"></i>
-                        تصدير كـ PDF
-                    </button>
-                    <div class="view-toggle">
-                        <button class="view-btn active" data-view="grid">
-                            <i class="fas fa-th"></i>
-                        </button>
-                        <button class="view-btn" data-view="list">
-                            <i class="fas fa-list"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Full Portfolio Container -->
-                <div class="full-portfolio" id="fullPortfolioContainer">
-                    <!-- سيتم ملؤها بالبيانات -->
                 </div>
             </section>
 
             <!-- Arabic Content -->
             <section id="arabic" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-font"></i> اللغة العربية</h1>
+                    <h1><i class="fas fa-book"></i> اللغة العربية</h1>
                     <p>إدارة حروف وأنشطة اللغة العربية</p>
                 </div>
                 
-                <div class="section-actions">
+                <div class="content-actions">
                     <button class="btn-primary" onclick="showAddModal('arabic')">
                         <i class="fas fa-plus"></i>
                         إضافة حرف جديد
                     </button>
-                    <button class="btn-secondary" onclick="exportSection('arabic')">
-                        <i class="fas fa-download"></i>
-                        تصدير القسم
+                    <button class="btn-secondary" onclick="clearLocalStorage()">
+                        <i class="fas fa-trash"></i>
+                        مسح الكل
                     </button>
                 </div>
                 
-                <div class="items-grid" id="arabicItems">
+                <div class="items-container" id="arabicItems">
                     <!-- العناصر ستظهر هنا -->
                 </div>
             </section>
 
-            <!-- باقي الأقسام بنفس الهيكل -->
-            <!-- English, Quran, Math, Science, Activities -->
-
-            <!-- Reports -->
-            <section id="reports" class="tab-content">
+            <!-- English Content -->
+            <section id="english" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-chart-bar"></i> التقارير والإحصائيات</h1>
-                    <p>تقارير مفصلة وإحصائيات عن ملف الإنجاز</p>
+                    <h1><i class="fas fa-language"></i> اللغة الإنجليزية</h1>
+                    <p>إدارة كلمات وأنشطة اللغة الإنجليزية</p>
                 </div>
                 
-                <div class="reports-container" id="reportsContainer">
-                    <!-- سيتم ملؤها بالتقرير -->
+                <div class="content-actions">
+                    <button class="btn-primary" onclick="showAddModal('english')">
+                        <i class="fas fa-plus"></i>
+                        إضافة كلمة جديدة
+                    </button>
+                </div>
+                
+                <div class="items-container" id="englishItems">
+                    <!-- العناصر ستظهر هنا -->
                 </div>
             </section>
 
-            <!-- Settings -->
-            <section id="settings" class="tab-content">
+            <!-- Quran Content -->
+            <section id="quran" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-cog"></i> الإعدادات</h1>
-                    <p>إعدادات النظام والتخصيص</p>
+                    <h1><i class="fas fa-book-quran"></i> القرآن الكريم</h1>
+                    <p>إدارة سور وأنشطة القرآن الكريم</p>
                 </div>
                 
-                <div class="settings-container">
-                    <div class="setting-card">
-                        <h3><i class="fas fa-palette"></i> التصميم</h3>
-                        <div class="setting-content">
-                            <div class="setting-item">
-                                <label>الوضع الداكن</label>
-                                <label class="switch">
-                                    <input type="checkbox" id="darkModeToggle">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <div class="setting-item">
-                                <label>عرض الصور</label>
-                                <select id="imageQuality">
-                                    <option value="high">عالية الجودة</option>
-                                    <option value="medium" selected>متوسطة</option>
-                                    <option value="low">منخفضة</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="setting-card">
-                        <h3><i class="fas fa-database"></i> البيانات</h3>
-                        <div class="setting-content">
-                            <div class="setting-item">
-                                <label>نسخ احتياطية تلقائية</label>
-                                <label class="switch">
-                                    <input type="checkbox" id="autoBackup" checked>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <button class="btn-secondary" onclick="clearAllData()">
-                                <i class="fas fa-trash"></i>
-                                حذف جميع البيانات
-                            </button>
-                        </div>
-                    </div>
+                <div class="content-actions">
+                    <button class="btn-primary" onclick="showAddModal('quran')">
+                        <i class="fas fa-plus"></i>
+                        إضافة سورة جديدة
+                    </button>
+                </div>
+                
+                <div class="items-container" id="quranItems">
+                    <!-- العناصر ستظهر هنا -->
+                </div>
+            </section>
+
+            <!-- Math Content -->
+            <section id="math" class="tab-content">
+                <div class="content-header">
+                    <h1><i class="fas fa-calculator"></i> الرياضيات</h1>
+                    <p>إدارة مفاهيم وأنشطة الرياضيات</p>
+                </div>
+                
+                <div class="content-actions">
+                    <button class="btn-primary" onclick="showAddModal('math')">
+                        <i class="fas fa-plus"></i>
+                        إضافة مفهوم جديد
+                    </button>
+                </div>
+                
+                <div class="items-container" id="mathItems">
+                    <!-- العناصر ستظهر هنا -->
+                </div>
+            </section>
+
+            <!-- Science Content -->
+            <section id="science" class="tab-content">
+                <div class="content-header">
+                    <h1><i class="fas fa-flask"></i> العلوم</h1>
+                    <p>إدارة تجارب وأنشطة العلوم</p>
+                </div>
+                
+                <div class="content-actions">
+                    <button class="btn-primary" onclick="showAddModal('science')">
+                        <i class="fas fa-plus"></i>
+                        إضافة تجربة جديدة
+                    </button>
+                </div>
+                
+                <div class="items-container" id="scienceItems">
+                    <!-- العناصر ستظهر هنا -->
+                </div>
+            </section>
+
+            <!-- Activities Content -->
+            <section id="activities" class="tab-content">
+                <div class="content-header">
+                    <h1><i class="fas fa-chalkboard-teacher"></i> النشاطات المدرسية</h1>
+                    <p>إدارة جميع النشاطات والإنجازات</p>
+                </div>
+                
+                <div class="content-actions">
+                    <button class="btn-primary" onclick="showAddModal('activities')">
+                        <i class="fas fa-plus"></i>
+                        إضافة نشاط جديد
+                    </button>
+                </div>
+                
+                <div class="items-container" id="activitiesItems">
+                    <!-- العناصر ستظهر هنا -->
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Modals -->
+    <!-- Add Modal -->
     <div class="modal" id="addModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">إضافة عنصر جديد</h3>
+                <h3 id="modalTitle">إضافة جديد</h3>
                 <button class="close-btn" onclick="closeModal('addModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="addForm" onsubmit="return false;">
+                <form id="addForm">
                     <input type="hidden" id="modalSubject">
                     
                     <div class="form-group">
-                        <label for="itemTitle">
-                            <i class="fas fa-heading"></i>
-                            العنوان
-                        </label>
+                        <label for="itemTitle"><i class="fas fa-heading"></i> العنوان</label>
                         <input type="text" id="itemTitle" placeholder="أدخل العنوان..." required>
-                        <small>مثال: حرف الألف، سورة الفاتحة، مفهوم الجمع...</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="itemDescription">
-                            <i class="fas fa-align-left"></i>
-                            الوصف
-                        </label>
-                        <textarea id="itemDescription" placeholder="وصف النشاط..." rows="4"></textarea>
+                        <label for="itemDescription"><i class="fas fa-align-left"></i> الوصف</label>
+                        <textarea id="itemDescription" placeholder="أدخل الوصف..." rows="4"></textarea>
                     </div>
                     
-                    <div class="form-section">
-                        <h4><i class="fas fa-images"></i> الصور (اختياري)</h4>
-                        <p class="section-description">يمكنك رفع صورتين لكل نشاط</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-image"></i> الصورة الأولى</label>
+                            <div class="file-upload">
+                                <input type="file" id="image1" accept="image/*" class="file-input">
+                                <label for="image1" class="file-label">
+                                    <i class="fas fa-upload"></i>
+                                    <span>اختر صورة</span>
+                                </label>
+                            </div>
+                            <div class="image-preview" id="preview1"></div>
+                        </div>
                         
-                        <div class="image-upload-grid">
-                            <div class="image-upload-box" onclick="document.getElementById('imageFile1').click()">
-                                <input type="file" id="imageFile1" class="file-input" accept="image/*" 
-                                       onchange="previewImage(this, 'imagePreview1')">
-                                <div class="upload-placeholder" id="imagePreview1">
-                                    <i class="fas fa-camera"></i>
-                                    <span>الصورة الأولى</span>
-                                    <small>انقر لاختيار صورة</small>
-                                </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-image"></i> الصورة الثانية</label>
+                            <div class="file-upload">
+                                <input type="file" id="image2" accept="image/*" class="file-input">
+                                <label for="image2" class="file-label">
+                                    <i class="fas fa-upload"></i>
+                                    <span>اختر صورة</span>
+                                </label>
                             </div>
-                            
-                            <div class="image-upload-box" onclick="document.getElementById('imageFile2').click()">
-                                <input type="file" id="imageFile2" class="file-input" accept="image/*" 
-                                       onchange="previewImage(this, 'imagePreview2')">
-                                <div class="upload-placeholder" id="imagePreview2">
-                                    <i class="fas fa-camera"></i>
-                                    <span>الصورة الثانية</span>
-                                    <small>انقر لاختيار صورة</small>
-                                </div>
-                            </div>
+                            <div class="image-preview" id="preview2"></div>
                         </div>
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="closeModal('addModal')">
-                            <i class="fas fa-times"></i>
-                            إلغاء
-                        </button>
-                        <button type="submit" class="btn-primary" onclick="saveItem()">
-                            <i class="fas fa-save"></i>
-                            حفظ العنصر
-                        </button>
+                        <button type="button" class="btn-secondary" onclick="closeModal('addModal')">إلغاء</button>
+                        <button type="submit" class="btn-primary">حفظ</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Print Modal -->
-    <div class="modal" id="printModal">
+    <!-- Admin Modal -->
+    <div class="modal" id="adminModal">
         <div class="modal-content modal-sm">
             <div class="modal-header">
-                <h3><i class="fas fa-print"></i> خيارات الطباعة</h3>
-                <button class="close-btn" onclick="closeModal('printModal')">&times;</button>
+                <h3><i class="fas fa-user-shield"></i> التحكم الكامل</h3>
+                <button class="close-btn" onclick="closeModal('adminModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="print-options">
-                    <div class="option-group">
-                        <label class="option-label">
-                            <input type="radio" name="printOption" value="full" checked>
-                            <span>الملف الكامل</span>
-                        </label>
-                        <label class="option-label">
-                            <input type="radio" name="printOption" value="current">
-                            <span>القسم الحالي فقط</span>
-                        </label>
-                        <label class="option-label">
-                            <input type="radio" name="printOption" value="selected">
-                            <span>عناصر محددة</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn-secondary" onclick="closeModal('printModal')">إلغاء</button>
-                    <button class="btn-primary" onclick="handlePrint()">
-                        <i class="fas fa-print"></i>
-                        طباعة
+                <div class="admin-options">
+                    <button class="admin-btn" onclick="backupData()">
+                        <i class="fas fa-download"></i>
+                        <span>نسخة احتياطية</span>
+                    </button>
+                    <button class="admin-btn" onclick="restoreBackup()">
+                        <i class="fas fa-upload"></i>
+                        <span>استعادة نسخة</span>
+                    </button>
+                    <button class="admin-btn" onclick="clearLocalStorage()">
+                        <i class="fas fa-trash"></i>
+                        <span>مسح الكل</span>
+                    </button>
+                    <button class="admin-btn" onclick="exportAllData()">
+                        <i class="fas fa-file-export"></i>
+                        <span>تصدير الكل</span>
                     </button>
                 </div>
             </div>
@@ -525,7 +444,7 @@
 
     <!-- Firebase Configuration -->
     <script>
-        // إعدادات Firebase
+        // إعدادات Firebase - نسخة مستقرة
         const firebaseConfig = {
             apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
             authDomain: "teacher-portfolio-fryal.firebaseapp.com",
@@ -536,36 +455,37 @@
             measurementId: "G-74HC2DH4YP"
         };
 
-        // Initialize Firebase
+        // Initialize Firebase إذا كان متاحاً
+        let firebaseInitialized = false;
+        
         try {
-            const app = firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth();
-            const db = firebase.firestore();
-            const storage = firebase.storage();
-
-            console.log("✅ Firebase initialized successfully!");
-            
-            // جعلها متاحة عالمياً
-            window.firebaseApp = app;
-            window.firebaseAuth = auth;
-            window.firebaseDb = db;
-            window.firebaseStorage = storage;
-
+            if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
+                firebase.initializeApp(firebaseConfig);
+                console.log("✅ Firebase initialized successfully!");
+                firebaseInitialized = true;
+                
+                // محاولة الاتصال
+                firebase.firestore().enablePersistence()
+                    .then(() => {
+                        console.log("📡 Firebase persistence enabled");
+                        updateConnectionStatus('متصل بالسحابة');
+                    })
+                    .catch((err) => {
+                        console.log("⚠️ Firebase persistence failed:", err);
+                        updateConnectionStatus('محلي + سحابة');
+                    });
+            }
         } catch (error) {
-            console.error("❌ Firebase initialization error:", error);
+            console.log("⚠️ Firebase initialization skipped:", error);
+            updateConnectionStatus('محلي فقط');
         }
 
-        // إخفاء التحميل بعد 1.5 ثانية
+        // إخفاء التحميل بعد 1 ثانية
         setTimeout(() => {
-            const loader = document.querySelector('.loader');
-            if (loader) {
-                loader.style.display = 'none';
-            }
-            const appContainer = document.querySelector('.app-container');
-            if (appContainer) {
-                appContainer.style.display = 'flex';
-            }
-        }, 1500);
+            document.querySelector('.loader').style.display = 'none';
+            document.querySelector('.app-container').style.display = 'flex';
+            showToast('مرحباً بك في ملف الإنجاز الرقمي', 'info');
+        }, 1000);
     </script>
 
     <!-- Main Script -->

@@ -1280,7 +1280,66 @@ input:checked + .slider:before {
         min-width: 280px;
     }
 }
+/* ===== ITEM ACTIONS ===== */
+.item-actions {
+    display: flex;
+    gap: 8px;
+}
 
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 14px;
+}
+
+.delete-btn {
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.delete-btn:hover {
+    background: #dc3545;
+    color: white;
+    transform: scale(1.1);
+}
+
+.edit-btn {
+    background: rgba(23, 162, 184, 0.1);
+    color: #17a2b8;
+    border: 1px solid rgba(23, 162, 184, 0.3);
+}
+
+.edit-btn:hover {
+    background: #17a2b8;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* زر حذف الكل */
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c82333, #dc3545);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+}
+
+/* زر حذف القسم الكامل في الإعدادات */
+.setting-card .btn-danger {
+    width: 100%;
+    margin-top: 10px;
+}
 /* ===== UTILITY CLASSES ===== */
 .hidden { display: none !important; }
 .text-center { text-align: center; }

@@ -82,114 +82,7 @@ function setupSidebar() {
         }
     });
 }
-// دالة حذف النشاط من أي قسم
-async function deleteItem(subject, itemId) {
-    if (!confirm('هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذه العملية.')) {
-        return;
-    }
-    
-    try {
-        showToast('جارٍ حذف العنصر...', 'info');
-        
-        // البحث عن العنصر المراد حذفه
-        const itemIndex = portfolioData[subject].findIndex(item => item.id === itemId);
-        
-        if (itemIndex === -1) {
-            showToast('العنصر غير موجود', 'error');
-            return;
-        }
-        
-        // إزالة العنصر من المصفوفة
-        portfolioData[subject].splice(itemIndex, 1);
-        
-        // حفظ التغييرات في التخزين المحلي
-        saveToLocalStorage();
-        
-        // محاولة الحفظ في Firebase إن كان متاحاً
-        if (window.firebaseDb) {
-            try {
-                await window.firebaseDb.collection('portfolio').doc('data').update({
-                    [subject]: portfolioData[subject]
-                });
-                console.log('✅ تم الحذف من Firebase');
-            } catch (error) {
-                console.warn('❌ فشل الحذف من Firebase:', error);
-            }
-        }
-        
-        // تحديث الواجهة
-        updateDashboard();
-        updateMenuBadges();
-        loadRecentActivity();
-        
-        // إعادة تحميل المحتوى الحالي
-        if (currentTab === subject || currentTab === 'fullPortfolio') {
-            if (currentTab === 'fullPortfolio') {
-                loadFullPortfolio();
-            } else {
-                loadSectionData(subject);
-            }
-        }
-        
-        showToast('تم حذف العنصر بنجاح', 'success');
-        
-    } catch (error) {
-        console.error('❌ خطأ في حذف العنصر:', error);
-        showToast('خطأ في حذف العنصر', 'error');
-    }
-}
 
-// دالة حذف النشاط من الملف الكامل
-async function deleteItemFromFull(subject, itemId) {
-    await deleteItem(subject, itemId);
-}
-
-// دالة حذف جميع عناصر قسم معين
-async function deleteAllItems(subject) {
-    if (!confirm(`هل أنت متأكد من حذف جميع عناصر قسم ${getSubjectName(subject)}؟ هذه العملية لا يمكن التراجع عنها.`)) {
-        return;
-    }
-    
-    try {
-        showToast(`جارٍ حذف جميع عناصر ${getSubjectName(subject)}...`, 'info');
-        
-        // حذف جميع العناصر
-        portfolioData[subject] = [];
-        
-        // حفظ التغييرات
-        saveToLocalStorage();
-        
-        // Firebase
-        if (window.firebaseDb) {
-            try {
-                await window.firebaseDb.collection('portfolio').doc('data').update({
-                    [subject]: []
-                });
-            } catch (error) {
-                console.warn('فشل حذف من Firebase:', error);
-            }
-        }
-        
-        // تحديث الواجهة
-        updateDashboard();
-        updateMenuBadges();
-        loadRecentActivity();
-        
-        if (currentTab === subject || currentTab === 'fullPortfolio') {
-            if (currentTab === 'fullPortfolio') {
-                loadFullPortfolio();
-            } else {
-                loadSectionData(subject);
-            }
-        }
-        
-        showToast(`تم حذف جميع عناصر ${getSubjectName(subject)}`, 'success');
-        
-    } catch (error) {
-        console.error('خطأ في حذف العناصر:', error);
-        showToast('خطأ في حذف العناصر', 'error');
-    }
-}
 // Toggle Sidebar
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -709,55 +602,47 @@ function loadSectionData(subject) {
         return;
     }
     
-   // Sort items by timestamp (newest first)
-items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    // Sort items by timestamp (newest first)
+    items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
+    // Add items
+    items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        
+        const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
+        const date = item.date || formatDate(new Date(item.timestamp));
+        
+        card.innerHTML = `
+            <div class="item-header">
+                <div>
+                    <div class="item-title">${title}</div>
+                    <div class="item-date">${date}</div>
+                </div>
+            </div>
+            <div class="item-body">
+                <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
+                <div class="item-images">
+                    <div class="item-image" onclick="viewImage('${item.images?.[0] || ''}')">
+                        ${item.images && item.images[0] ? 
+                            `<img src="${item.images[0]}" alt="الصورة الأولى">` : 
+                            '<div class="item-image empty"><i class="fas fa-image"></i></div>'
+                        }
+                    </div>
+                    <div class="item-image" onclick="viewImage('${item.images?.[1] || ''}')">
+                        ${item.images && item.images[1] ? 
+                            `<img src="${item.images[1]}" alt="الصورة الثانية">` : 
+                            '<div class="item-image empty"><i class="fas fa-image"></i></div>'
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    });
+}
 
-// Add items
-items.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'item-card';
-    
-    const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
-    const date = item.date || formatDate(new Date(item.timestamp));
-    
-    card.innerHTML = `
-        <div class="item-header">
-            <div>
-                <div class="item-title">${title}</div>
-                <div class="item-date">${date}</div>
-            </div>
-            <div class="item-actions">
-                <button class="btn-icon delete-btn" onclick="deleteItem('${subject}', '${item.id}')" 
-                        title="حذف العنصر">
-                    <i class="fas fa-trash"></i>
-                </button>
-                <button class="btn-icon edit-btn" onclick="editItem('${subject}', '${item.id}')" 
-                        title="تعديل العنصر">
-                    <i class="fas fa-edit"></i>
-                </button>
-            </div>
-        </div>
-        <div class="item-body">
-            <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
-            <div class="item-images">
-                <div class="item-image" onclick="viewImage('${item.images?.[0] || ''}')">
-                    ${item.images && item.images[0] ? 
-                        `<img src="${item.images[0]}" alt="الصورة الأولى">` : 
-                        '<div class="item-image empty"><i class="fas fa-image"></i></div>'
-                    }
-                </div>
-                <div class="item-image" onclick="viewImage('${item.images?.[1] || ''}')">
-                    ${item.images && item.images[1] ? 
-                        `<img src="${item.images[1]}" alt="الصورة الثانية">` : 
-                        '<div class="item-image empty"><i class="fas fa-image"></i></div>'
-                    }
-                </div>
-            </div>
-        </div>
-    `;
-    
-    container.appendChild(card);
-});
 // Load Full Portfolio
 function loadFullPortfolio() {
     const container = document.getElementById('fullPortfolioContainer');
@@ -796,32 +681,27 @@ function loadFullPortfolio() {
                 const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
                 const date = item.date || formatDate(new Date(item.timestamp));
                 
-               card.innerHTML = `
-    <div class="item-header">
-        <div>
-            <div class="item-title">${title}</div>
-            <div class="item-date">${date}</div>
-        </div>
-        <div class="item-actions">
-            <button class="btn-icon delete-btn" onclick="deleteItemFromFull('${subject}', '${item.id}')" 
-                    title="حذف العنصر">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    </div>
-    <div class="item-body">
-        <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
-        ${item.images && item.images.length > 0 ? `
-            <div class="item-images">
-                ${item.images.map((img, index) => `
-                    <div class="item-image" onclick="viewImage('${img}')">
-                        <img src="${img}" alt="الصورة ${index + 1}">
+                card.innerHTML = `
+                    <div class="item-header">
+                        <div>
+                            <div class="item-title">${title}</div>
+                            <div class="item-date">${date}</div>
+                        </div>
                     </div>
-                `).join('')}
-            </div>
-        ` : ''}
-    </div>
-`;
+                    <div class="item-body">
+                        <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
+                        ${item.images && item.images.length > 0 ? `
+                            <div class="item-images">
+                                ${item.images.map((img, index) => `
+                                    <div class="item-image" onclick="viewImage('${img}')">
+                                        <img src="${img}" alt="الصورة ${index + 1}">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
                 itemsContainer.appendChild(card);
             });
         }
@@ -842,11 +722,7 @@ function loadFullPortfolio() {
         `;
     }
 }
-// دالة تعديل العنصر
-function editItem(subject, itemId) {
-    showToast('ميزة التعديل قيد التطوير', 'info');
-    // يمكنك إضافة وظيفة التعديل لاحقاً
-}
+
 // View Image
 function viewImage(imageUrl) {
     if (!imageUrl) {

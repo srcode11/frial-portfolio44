@@ -532,17 +532,70 @@ function saveItem() {
     }
 }
 
-// Upload Image - async function
+// دالة رفع الصورة مع ضغط
 async function uploadImage(file) {
+    try {
+        // إذا كانت الصورة كبيرة، قم بضغطها
+        if (file.size > 500 * 1024) { // إذا كانت أكبر من 500KB
+            file = await compressImage(file);
+        }
+        
+        // استخدام base64 للتخزين المحلي (أفضل)
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                resolve(e.target.result); // base64 string
+            };
+            reader.readAsDataURL(file);
+        });
+        
+    } catch (error) {
+        console.warn('❌ فشل رفع الصورة:', error);
+        return null;
+    }
+}
+
+// دالة ضغط الصور
+async function compressImage(file, maxWidth = 1024, quality = 0.7) {
     return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            // Compress image if needed
-            const imageQuality = localStorage.getItem('imageQuality') || 'medium';
-            const compressedData = compressImage(e.target.result, imageQuality);
-            resolve(compressedData);
-        };
         reader.readAsDataURL(file);
+        
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                // تقليل الحجم إذا كان كبيراً
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // تحويل إلى jpeg بجودة أقل
+                canvas.toBlob(
+                    (blob) => {
+                        const compressedFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        resolve(compressedFile);
+                    },
+                    'image/jpeg',
+                    quality
+                );
+            };
+        };
     });
 }
 

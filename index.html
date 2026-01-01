@@ -688,7 +688,32 @@
             <img id="previewedImage" style="width: 100%; height: auto; border-radius: 8px;">
         </div>
     </div>
+    <script>
+    // إعدادات Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
+        authDomain: "teacher-portfolio-fryal.firebaseapp.com",
+        projectId: "teacher-portfolio-fryal",
+        storageBucket: "teacher-portfolio-fryal.firebasestorage.app",
+        messagingSenderId: "1054582250352",
+        appId: "1:1054582250352:web:0fbb6f5a8c2763ffcc4db5",
+        measurementId: "G-74HC2DH4YP"
+    };
 
+    // Initialize Firebase بدون try-catch
+    if (typeof firebase !== 'undefined') {
+        const app = firebase.initializeApp(firebaseConfig);
+        console.log("✅ Firebase initialized!");
+    } else {
+        console.log("⚠️ Firebase SDK not loaded");
+    }
+    
+    // إخفاء التحميل بعد ثانيتين
+    setTimeout(() => {
+        document.querySelector('.loader').style.display = 'none';
+        document.querySelector('.app-container').style.display = 'block';
+    }, 2000);
+</script>
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 

@@ -6,10 +6,16 @@
     <title>ملف إنجاز المعلمة فريال الغماري</title>
     
     <!-- Font Awesome - رابط صحيح -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.css">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
@@ -19,15 +25,9 @@
         body {
             opacity: 0;
             animation: fadeIn 0.3s ease forwards;
-            font-family: 'Cairo', sans-serif;
         }
         @keyframes fadeIn {
             to { opacity: 1; }
-        }
-        
-        /* إصلاح الأيقونات */
-        .fas, .far, .fal, .fad, .fab, .fa {
-            font-family: 'Font Awesome 6 Free' !important;
         }
     </style>
 </head>
@@ -162,15 +162,15 @@
             </div>
             
             <div class="sidebar-footer">
-                <button class="btn-primary btn-block" id="quickAddBtn">
+                <button class="btn-primary btn-block" onclick="showAddModal('quick')">
                     <i class="fas fa-plus-circle"></i>
                     إضافة سريعة
                 </button>
-                <button class="btn-secondary btn-block mt-10" id="printBtn">
+                <button class="btn-secondary btn-block mt-10" onclick="showPrintModal()">
                     <i class="fas fa-print"></i>
                     طباعة الملف
                 </button>
-                <button class="btn-success btn-block mt-10" id="backupBtn">
+                <button class="btn-success btn-block mt-10" onclick="backupData()">
                     <i class="fas fa-download"></i>
                     نسخة احتياطية
                 </button>
@@ -233,42 +233,42 @@
                         إجراءات سريعة
                     </h2>
                     <div class="quick-actions-grid">
-                        <button class="action-card" data-tab="fullPortfolio">
+                        <button class="action-card" onclick="switchTab('fullPortfolio')">
                             <div class="action-icon">
                                 <i class="fas fa-book-open"></i>
                             </div>
                             <h4>الملف الكامل</h4>
                             <p>عرض جميع العناصر مع الصور</p>
                         </button>
-                        <button class="action-card" data-subject="arabic">
+                        <button class="action-card" onclick="showAddModal('arabic')">
                             <div class="action-icon">
                                 <i class="fas fa-font"></i>
                             </div>
                             <h4>حرف عربي</h4>
                             <p>إضافة نشاط لحرف جديد</p>
                         </button>
-                        <button class="action-card" data-subject="english">
+                        <button class="action-card" onclick="showAddModal('english')">
                             <div class="action-icon">
                                 <i class="fas fa-language"></i>
                             </div>
                             <h4>كلمة إنجليزية</h4>
                             <p>إضافة نشاط لكلمة جديدة</p>
                         </button>
-                        <button class="action-card" data-subject="quran">
+                        <button class="action-card" onclick="showAddModal('quran')">
                             <div class="action-icon">
                                 <i class="fas fa-book-quran"></i>
                             </div>
                             <h4>سورة قرآنية</h4>
                             <p>إضافة نشاط لسورة جديدة</p>
                         </button>
-                        <button class="action-card" data-subject="math">
+                        <button class="action-card" onclick="showAddModal('math')">
                             <div class="action-icon">
                                 <i class="fas fa-calculator"></i>
                             </div>
                             <h4>مفهوم رياضي</h4>
                             <p>إضافة نشاط لمفهوم جديد</p>
                         </button>
-                        <button class="action-card" data-subject="science">
+                        <button class="action-card" onclick="showAddModal('science')">
                             <div class="action-icon">
                                 <i class="fas fa-flask"></i>
                             </div>
@@ -285,7 +285,7 @@
                             <i class="fas fa-history"></i>
                             أحدث الإضافات
                         </h2>
-                        <button class="btn-text" data-tab="fullPortfolio">
+                        <button class="btn-text" onclick="switchTab('fullPortfolio')">
                             <i class="fas fa-eye"></i>
                             عرض الكل
                         </button>
@@ -304,15 +304,15 @@
                 </div>
                 
                 <div class="portfolio-controls">
-                    <button class="btn-primary" id="printFullBtn">
+                    <button class="btn-primary" onclick="printFullPortfolio()">
                         <i class="fas fa-print"></i>
                         طباعة الملف
                     </button>
-                    <button class="btn-secondary" id="exportPdfBtn">
+                    <button class="btn-secondary" onclick="exportFullPortfolio()">
                         <i class="fas fa-file-pdf"></i>
                         تصدير PDF
                     </button>
-                    <button class="btn-success" data-tab="dashboard">
+                    <button class="btn-success" onclick="switchTab('dashboard')">
                         <i class="fas fa-home"></i>
                         العودة للرئيسية
                     </button>
@@ -332,15 +332,15 @@
                 </div>
                 
                 <div class="section-actions">
-                    <button class="btn-primary" data-subject="arabic">
+                    <button class="btn-primary" onclick="showAddModal('arabic')">
                         <i class="fas fa-plus"></i>
                         إضافة حرف جديد
                     </button>
-                    <button class="btn-secondary" id="exportArabicBtn">
+                    <button class="btn-secondary" onclick="exportSection('arabic')">
                         <i class="fas fa-download"></i>
                         تصدير القسم
                     </button>
-                    <button class="btn-success" data-tab="fullPortfolio">
+                    <button class="btn-success" onclick="switchTab('fullPortfolio')">
                         <i class="fas fa-eye"></i>
                         عرض الكل
                     </button>
@@ -359,11 +359,11 @@
                 </div>
                 
                 <div class="section-actions">
-                    <button class="btn-primary" data-subject="english">
+                    <button class="btn-primary" onclick="showAddModal('english')">
                         <i class="fas fa-plus"></i>
                         إضافة كلمة جديدة
                     </button>
-                    <button class="btn-success" data-tab="fullPortfolio">
+                    <button class="btn-success" onclick="switchTab('fullPortfolio')">
                         <i class="fas fa-eye"></i>
                         عرض الكل
                     </button>
@@ -382,11 +382,11 @@
                 </div>
                 
                 <div class="section-actions">
-                    <button class="btn-primary" data-subject="quran">
+                    <button class="btn-primary" onclick="showAddModal('quran')">
                         <i class="fas fa-plus"></i>
                         إضافة سورة جديدة
                     </button>
-                    <button class="btn-success" data-tab="fullPortfolio">
+                    <button class="btn-success" onclick="switchTab('fullPortfolio')">
                         <i class="fas fa-eye"></i>
                         عرض الكل
                     </button>
@@ -405,11 +405,11 @@
                 </div>
                 
                 <div class="section-actions">
-                    <button class="btn-primary" data-subject="math">
+                    <button class="btn-primary" onclick="showAddModal('math')">
                         <i class="fas fa-plus"></i>
                         إضافة مفهوم جديد
                     </button>
-                    <button class="btn-success" data-tab="fullPortfolio">
+                    <button class="btn-success" onclick="switchTab('fullPortfolio')">
                         <i class="fas fa-eye"></i>
                         عرض الكل
                     </button>
@@ -428,11 +428,11 @@
                 </div>
                 
                 <div class="section-actions">
-                    <button class="btn-primary" data-subject="science">
+                    <button class="btn-primary" onclick="showAddModal('science')">
                         <i class="fas fa-plus"></i>
                         إضافة تجربة جديدة
                     </button>
-                    <button class="btn-success" data-tab="fullPortfolio">
+                    <button class="btn-success" onclick="switchTab('fullPortfolio')">
                         <i class="fas fa-eye"></i>
                         عرض الكل
                     </button>
@@ -451,11 +451,11 @@
                 </div>
                 
                 <div class="section-actions">
-                    <button class="btn-primary" data-subject="activities">
+                    <button class="btn-primary" onclick="showAddModal('activities')">
                         <i class="fas fa-plus"></i>
                         إضافة نشاط جديد
                     </button>
-                    <button class="btn-success" data-tab="fullPortfolio">
+                    <button class="btn-success" onclick="switchTab('fullPortfolio')">
                         <i class="fas fa-eye"></i>
                         عرض الكل
                     </button>
@@ -526,7 +526,7 @@
                                     <span class="slider"></span>
                                 </label>
                             </div>
-                            <button class="btn-secondary" id="clearAllDataBtn">
+                            <button class="btn-secondary" onclick="clearAllData()">
                                 <i class="fas fa-trash"></i>
                                 حذف جميع البيانات
                             </button>
@@ -536,15 +536,15 @@
                     <div class="setting-card">
                         <h3><i class="fas fa-tools"></i> الأدوات</h3>
                         <div class="setting-content">
-                            <button class="btn-primary" id="backupDataBtn">
+                            <button class="btn-primary" onclick="backupData()">
                                 <i class="fas fa-download"></i>
                                 نسخة احتياطية
                             </button>
-                            <button class="btn-secondary" id="restoreBackupBtn">
+                            <button class="btn-secondary" onclick="restoreBackup()">
                                 <i class="fas fa-upload"></i>
                                 استعادة نسخة
                             </button>
-                            <button class="btn-success" id="resetSettingsBtn">
+                            <button class="btn-success" onclick="resetSettings()">
                                 <i class="fas fa-redo"></i>
                                 إعادة تعيين الإعدادات
                             </button>
@@ -560,7 +560,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3><i class="fas fa-plus-circle"></i> <span id="modalTitle">إضافة عنصر جديد</span></h3>
-                <button class="close-btn" id="closeAddModalBtn">
+                <button class="close-btn" onclick="closeModal('addModal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -593,8 +593,9 @@
                         <p class="section-description">يمكنك رفع صورتين لكل نشاط</p>
                         
                         <div class="image-upload-grid">
-                            <div class="image-upload-box" id="uploadImage1">
-                                <input type="file" id="imageFile1" class="file-input" accept="image/*">
+                            <div class="image-upload-box" onclick="document.getElementById('imageFile1').click()">
+                                <input type="file" id="imageFile1" class="file-input" accept="image/*" 
+                                       onchange="previewImage(this, 'imagePreview1')">
                                 <div class="upload-placeholder" id="imagePreview1">
                                     <i class="fas fa-camera"></i>
                                     <span>الصورة الأولى</span>
@@ -602,8 +603,9 @@
                                 </div>
                             </div>
                             
-                            <div class="image-upload-box" id="uploadImage2">
-                                <input type="file" id="imageFile2" class="file-input" accept="image/*">
+                            <div class="image-upload-box" onclick="document.getElementById('imageFile2').click()">
+                                <input type="file" id="imageFile2" class="file-input" accept="image/*" 
+                                       onchange="previewImage(this, 'imagePreview2')">
                                 <div class="upload-placeholder" id="imagePreview2">
                                     <i class="fas fa-camera"></i>
                                     <span>الصورة الثانية</span>
@@ -614,11 +616,11 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn-secondary" id="cancelAddBtn">
+                        <button type="button" class="btn-secondary" onclick="closeModal('addModal')">
                             <i class="fas fa-times"></i>
                             إلغاء
                         </button>
-                        <button type="button" class="btn-primary" id="saveItemBtn">
+                        <button type="button" class="btn-primary" onclick="saveItem()">
                             <i class="fas fa-save"></i>
                             حفظ العنصر
                         </button>
@@ -633,7 +635,7 @@
         <div class="modal-content modal-sm">
             <div class="modal-header">
                 <h3><i class="fas fa-print"></i> خيارات الطباعة</h3>
-                <button class="close-btn" id="closePrintModalBtn">
+                <button class="close-btn" onclick="closeModal('printModal')">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -658,11 +660,11 @@
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="btn-secondary" id="cancelPrintBtn">
+                    <button class="btn-secondary" onclick="closeModal('printModal')">
                         <i class="fas fa-times"></i>
                         إلغاء
                     </button>
-                    <button class="btn-primary" id="confirmPrintBtn">
+                    <button class="btn-primary" onclick="handlePrint()">
                         <i class="fas fa-print"></i>
                         طباعة
                     </button>
@@ -672,17 +674,79 @@
     </div>
 
     <!-- Image Preview Modal -->
-    <div class="modal" id="imagePreviewModal">
-        <div class="modal-content image-modal-content">
-            <button class="close-btn" id="closeImageModalBtn">
+    <div class="modal" id="imagePreviewModal" style="background: rgba(0,0,0,0.9); display: none;">
+        <div class="modal-content" style="background: transparent; box-shadow: none; max-width: 90%; padding: 20px;">
+            <button class="close-btn" onclick="closeModal('imagePreviewModal')" 
+                    style="position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.2); z-index: 1001;">
                 <i class="fas fa-times"></i>
             </button>
-            <img id="previewedImage" class="previewed-image">
+            <img id="previewedImage" style="width: 100%; height: auto; border-radius: 8px;">
         </div>
     </div>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Firebase Configuration -->
+    <script>
+        // إعدادات Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
+            authDomain: "teacher-portfolio-fryal.firebaseapp.com",
+            projectId: "teacher-portfolio-fryal",
+            storageBucket: "teacher-portfolio-fryal.firebasestorage.app",
+            messagingSenderId: "1054582250352",
+            appId: "1:1054582250352:web:0fbb6f5a8c2763ffcc4db5",
+            measurementId: "G-74HC2DH4YP"
+        };
+
+        // Initialize Firebase
+        try {
+            const app = firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            const storage = firebase.storage();
+
+            console.log("✅ Firebase initialized successfully!");
+            
+            // جعلها متاحة عالمياً
+            window.firebaseApp = app;
+            window.firebaseAuth = auth;
+            window.firebaseDb = db;
+            window.firebaseStorage = storage;
+
+        } catch (error) {
+            console.error("❌ Firebase initialization error:", error);
+        }
+
+        // إخفاء التحميل
+        setTimeout(() => {
+            const loader = document.querySelector('.loader');
+            const appContainer = document.querySelector('.app-container');
+            
+            if (loader) loader.style.display = 'none';
+            if (appContainer) {
+                appContainer.style.display = 'flex';
+                appContainer.style.animation = 'fadeIn 0.5s ease';
+            }
+            
+            // إظهار رسالة ترحيب
+            setTimeout(() => {
+                showToast('مرحباً بك في ملف الإنجاز الرقمي', 'success');
+            }, 500);
+        }, 1500);
+        
+        // دالة إظهار الإشعارات (مؤقتة حتى يتم تحميل script.js)
+        window.showToast = function(message, type = 'info') {
+            console.log(`[Toast] ${type}: ${message}`);
+        };
+        
+        // دالة إغلاق النافذة المنبثقة
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'none';
+        };
+    </script>
 
     <!-- Main Script -->
     <script src="script.js"></script>

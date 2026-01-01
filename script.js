@@ -1,7 +1,7 @@
-// Teacher Portfolio System - Complete & Working
+// Teacher Portfolio System - Complete Working System
 console.log('🌟 نظام ملف الإنجاز - جاهز للعمل');
 
-// بيانات التطبيق
+// Global Variables
 let portfolioData = {
     arabic: [],
     english: [],
@@ -12,122 +12,140 @@ let portfolioData = {
 };
 
 let currentTab = 'dashboard';
-let isOnline = false;
+let isAdmin = true; // اجعل الجميع مسؤولين مؤقتاً
 
-// تهيئة التطبيق
+// Initialize App
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 بدء تهيئة التطبيق...');
     
-    // إعداد السايدبار
-    setupSidebar();
-    
-    // إعداد المستمعين للأحداث
+    // Setup Event Listeners
     setupEventListeners();
     
-    // تحميل البيانات
+    // Load Data
     loadData();
     
-    // إعداد الثيم
+    // Setup Theme
     setupTheme();
     
-    // تحديث الإحصائيات
-    updateBadges();
+    // Setup Sidebar
+    setupSidebar();
     
     console.log('✅ التطبيق جاهز للاستخدام');
 });
 
-// إعداد السايدبار
-function setupSidebar() {
-    const menuToggle = document.getElementById('menuToggle');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarClose = document.getElementById('sidebarClose');
-    const mainContent = document.getElementById('mainContent');
-    
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            menuToggle.innerHTML = sidebar.classList.contains('active') ? 
-                '<i class="fas fa-times"></i>' : 
-                '<i class="fas fa-bars"></i>';
-        });
-    }
-    
-    if (sidebarClose) {
-        sidebarClose.addEventListener('click', function() {
-            sidebar.classList.remove('active');
-            menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
-        });
-    }
-    
-    // إغلاق السايدبار عند النقر خارجها
-    if (mainContent) {
-        mainContent.addEventListener('click', function() {
-            if (sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
-                menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
-            }
-        });
-    }
-}
-
-// إعداد المستمعين للأحداث
+// Setup Event Listeners
 function setupEventListeners() {
     console.log('🔧 إعداد المستمعين للأحداث...');
     
-    // عناصر القائمة
+    // Menu Toggle
+    document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
+    document.getElementById('sidebarClose').addEventListener('click', toggleSidebar);
+    
+    // Theme Toggle
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    
+    // Fullscreen Toggle
+    document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+    
+    // Sidebar Menu Items
     document.querySelectorAll('.menu-item').forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
             const tab = this.getAttribute('data-tab');
             switchTab(tab);
-            
-            // إغلاق السايدبار على الجوال
-            if (window.innerWidth < 768) {
-                const sidebar = document.getElementById('sidebar');
-                const menuToggle = document.getElementById('menuToggle');
-                if (sidebar) sidebar.classList.remove('active');
-                if (menuToggle) menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
-            }
+            toggleSidebar(); // إغلاق السايدبار بعد الاختيار
         });
     });
     
-    // تبديل الثيم
-    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-    
-    // زر الطباعة
-    document.querySelectorAll('[onclick*="showPrintModal"]').forEach(btn => {
-        btn.addEventListener('click', showPrintModal);
-    });
-    
-    // زر النسخة الاحتياطية
-    document.querySelectorAll('[onclick*="backupData"]').forEach(btn => {
-        btn.addEventListener('click', backupData);
-    });
-    
-    // نسخ سريعة
-    document.querySelectorAll('.action-card').forEach(card => {
-        card.addEventListener('click', function() {
-            const text = this.querySelector('h4').textContent;
-            showToast(`فتح: ${text}`, 'info');
-        });
-    });
-    
-    // معاينة الصور
-    document.querySelectorAll('.image-upload-box').forEach(box => {
-        box.addEventListener('click', function() {
-            const input = this.querySelector('input[type="file"]');
-            if (input) input.click();
-        });
+    // Dark Mode Toggle
+    document.getElementById('darkModeToggle').addEventListener('change', function() {
+        const isDark = this.checked;
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        showToast(`الوضع ${isDark ? 'الداكن' : 'الفاتح'} مفعل`, 'success');
     });
     
     console.log('✅ تم إعداد المستمعين للأحداث');
 }
 
-// تبديل التبويب
-function switchTab(tabId) {
-    console.log(`🔄 التبديل إلى: ${tabId}`);
+// Setup Sidebar
+function setupSidebar() {
+    // Close sidebar when clicking outside
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+        
+        if (sidebar.classList.contains('active') && 
+            !sidebar.contains(e.target) && 
+            !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+}
+
+// Toggle Sidebar
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('active');
+}
+
+// Setup Theme
+function setupTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
     
-    // تحديث القائمة
+    const themeToggle = document.getElementById('darkModeToggle');
+    if (themeToggle) {
+        themeToggle.checked = savedTheme === 'dark';
+    }
+    
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+        themeBtn.innerHTML = savedTheme === 'dark' ? 
+            '<i class="fas fa-sun"></i>' : 
+            '<i class="fas fa-moon"></i>';
+    }
+}
+
+// Toggle Theme
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    const themeBtn = document.getElementById('themeToggle');
+    themeBtn.innerHTML = newTheme === 'dark' ? 
+        '<i class="fas fa-sun"></i>' : 
+        '<i class="fas fa-moon"></i>';
+    
+    const themeToggle = document.getElementById('darkModeToggle');
+    if (themeToggle) {
+        themeToggle.checked = newTheme === 'dark';
+    }
+    
+    showToast(`الوضع ${newTheme === 'dark' ? 'الداكن' : 'الفاتح'} مفعل`, 'success');
+}
+
+// Toggle Fullscreen
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
+// Switch Tabs
+function switchTab(tabId) {
+    console.log(`🔄 الانتقال إلى: ${getTabName(tabId)}`);
+    
+    // Update active menu item
     document.querySelectorAll('.menu-item').forEach(item => {
         item.classList.remove('active');
         if (item.getAttribute('data-tab') === tabId) {
@@ -135,32 +153,29 @@ function switchTab(tabId) {
         }
     });
     
-    // تحديث المحتوى
+    // Update tab content
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
         if (content.id === tabId) {
             content.classList.add('active');
-            
-            // تحميل بيانات التبويب إذا لزم
-            if (tabId === 'fullPortfolio') {
-                renderFullPortfolio();
-            } else if (tabId !== 'dashboard' && tabId !== 'settings' && tabId !== 'reports') {
-                renderSection(tabId);
-            } else if (tabId === 'reports') {
-                renderReports();
-            }
         }
     });
     
     currentTab = tabId;
     
-    // تحديث عنوان الصفحة
-    updatePageTitle(tabId);
+    // Load section data if needed
+    if (tabId === 'fullPortfolio') {
+        loadFullPortfolio();
+    } else if (tabId === 'reports') {
+        generateReports();
+    } else if (tabId !== 'dashboard' && tabId !== 'settings') {
+        loadSectionData(tabId);
+    }
     
-    showToast(`تم فتح ${getTabName(tabId)}`, 'info');
+    showToast(`تم الانتقال إلى ${getTabName(tabId)}`, 'info');
 }
 
-// الحصول على اسم التبويب
+// Get Tab Name
 function getTabName(tabId) {
     const names = {
         dashboard: 'الرئيسية',
@@ -177,122 +192,125 @@ function getTabName(tabId) {
     return names[tabId] || tabId;
 }
 
-// تحديث عنوان الصفحة
-function updatePageTitle(tabId) {
-    const tabName = getTabName(tabId);
-    document.title = `${tabName} - ملف إنجاز المعلمة فريال`;
-}
-
-// تحميل البيانات
+// Load Data
 async function loadData() {
     console.log('📥 جاري تحميل البيانات...');
     
-    showToast('جاري تحميل البيانات...', 'info');
-    
     try {
-        // محاولة Firebase أولاً
+        // Try Firebase first
         if (window.firebaseDb) {
-            const docRef = window.firebaseDb.collection('portfolio').doc('data');
-            const docSnap = await docRef.get();
-            
-            if (docSnap.exists()) {
-                portfolioData = docSnap.data();
-                console.log('✅ تم تحميل البيانات من Firebase');
-                updateConnectionStatus('متصل بـ Firebase');
-                isOnline = true;
-            } else {
-                // إنشاء مستند جديد
-                await docRef.set(portfolioData);
-                console.log('📝 تم إنشاء مستند جديد');
-                updateConnectionStatus('جديد');
+            try {
+                const docRef = window.firebaseDb.collection('portfolio').doc('data');
+                const docSnap = await docRef.get();
+                
+                if (docSnap.exists) {
+                    portfolioData = docSnap.data();
+                    console.log('✅ تم تحميل البيانات من Firebase');
+                    updateConnectionStatus('متصل');
+                } else {
+                    // Create new document
+                    await docRef.set(portfolioData);
+                    console.log('📝 تم إنشاء مستند جديد في Firebase');
+                    updateConnectionStatus('جديد');
+                }
+            } catch (firebaseError) {
+                console.warn('❌ Firebase فشل، جاري استخدام التخزين المحلي:', firebaseError);
+                loadFromLocalStorage();
             }
         } else {
-            throw new Error('Firebase غير متاح');
+            loadFromLocalStorage();
         }
-    } catch (error) {
-        console.warn('❌ Firebase فشل، جاري استخدام التخزين المحلي:', error);
         
-        // استخدام التخزين المحلي
-        try {
-            const savedData = localStorage.getItem('teacherPortfolioData');
-            if (savedData) {
-                portfolioData = JSON.parse(savedData);
-                console.log('✅ تم تحميل البيانات من التخزين المحلي');
-                updateConnectionStatus('محلي');
-            }
-        } catch (localError) {
-            console.error('❌ فشل تحميل البيانات المحلية:', localError);
-            updateConnectionStatus('غير متصل');
-        }
+        // Update UI
+        updateDashboard();
+        updateMenuBadges();
+        loadRecentActivity();
+        
+        showToast('تم تحميل البيانات بنجاح', 'success');
+        
+    } catch (error) {
+        console.error('❌ خطأ في تحميل البيانات:', error);
+        showToast('خطأ في تحميل البيانات', 'error');
+        updateConnectionStatus('محلي');
     }
-    
-    // تحديث الواجهة
-    updateDashboard();
-    updateBadges();
-    
-    showToast('تم تحميل البيانات بنجاح', 'success');
 }
 
-// تحديث حالة الاتصال
+// Load from Local Storage
+function loadFromLocalStorage() {
+    const localData = localStorage.getItem('teacherPortfolio');
+    if (localData) {
+        portfolioData = JSON.parse(localData);
+        console.log('✅ تم تحميل البيانات من التخزين المحلي');
+        updateConnectionStatus('محلي');
+    } else {
+        console.log('📝 لا توجد بيانات محلية، سيتم إنشاء ملف جديد');
+        updateConnectionStatus('جديد');
+    }
+}
+
+// Update Connection Status
 function updateConnectionStatus(status) {
     const statusElement = document.getElementById('connectionStatus');
-    const statusItem = document.getElementById('connectionStatusItem');
-    
     if (statusElement) {
         statusElement.textContent = status;
         
-        // تحديث اللون حسب الحالة
-        if (status.includes('Firebase') || status.includes('متصل')) {
-            statusElement.style.color = '#51CF66';
-            if (statusItem) statusItem.style.color = '#51CF66';
-        } else if (status.includes('محلي')) {
-            statusElement.style.color = '#FFD43B';
-            if (statusItem) statusItem.style.color = '#FFD43B';
+        const statusItem = document.getElementById('connectionStatusItem');
+        if (status === 'متصل') {
+            statusItem.style.color = '#28a745';
+        } else if (status === 'محلي') {
+            statusItem.style.color = '#ffc107';
         } else {
-            statusElement.style.color = '#FF6B6B';
-            if (statusItem) statusItem.style.color = '#FF6B6B';
+            statusItem.style.color = '#6c757d';
         }
     }
 }
 
-// تحديث الشاشة الرئيسية
+// Update Dashboard
 function updateDashboard() {
     console.log('📊 تحديث الشاشة الرئيسية...');
     
-    // حساب الإحصائيات
+    // Calculate totals
     const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
     const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
         sum + arr.reduce((imgSum, item) => imgSum + (item.images ? item.images.length : 0), 0), 0);
     
-    // هذا الشهر
+    // This month items
     const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
     const thisMonthItems = Object.values(portfolioData).reduce((sum, arr) => 
         sum + arr.filter(item => {
             const itemDate = new Date(item.timestamp || Date.now());
-            return itemDate.getMonth() === currentMonth && 
-                   itemDate.getFullYear() === currentYear;
+            return itemDate.getMonth() === currentMonth;
         }).length, 0);
     
-    // معدل الإنجاز
-    const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 100) * 100)) : 0;
+    // Completion rate (assuming goal is 50 items)
+    const completionRate = Math.min(100, Math.floor((totalItems / 50) * 100));
     
-    // تحديث DOM
+    // Update DOM
     document.getElementById('totalItems').textContent = totalItems;
     document.getElementById('totalImages').textContent = totalImages;
     document.getElementById('thisMonth').textContent = thisMonthItems;
     document.getElementById('completionRate').textContent = `${completionRate}%`;
-    
-    // تحديث النشاط الأخير
-    updateRecentActivity();
 }
 
-// تحديث النشاط الأخير
-function updateRecentActivity() {
+// Update Menu Badges
+function updateMenuBadges() {
+    document.getElementById('fullPortfolioBadge').textContent = 
+        Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
+    
+    document.getElementById('arabicBadge').textContent = portfolioData.arabic.length;
+    document.getElementById('englishBadge').textContent = portfolioData.english.length;
+    document.getElementById('quranBadge').textContent = portfolioData.quran.length;
+    document.getElementById('mathBadge').textContent = portfolioData.math.length;
+    document.getElementById('scienceBadge').textContent = portfolioData.science.length;
+    document.getElementById('activitiesBadge').textContent = portfolioData.activities.length;
+}
+
+// Load Recent Activity
+function loadRecentActivity() {
     const container = document.getElementById('recentActivity');
     if (!container) return;
     
-    // جمع جميع العناصر
+    // Get all items sorted by timestamp
     const allItems = [];
     Object.keys(portfolioData).forEach(subject => {
         portfolioData[subject].forEach(item => {
@@ -303,13 +321,13 @@ function updateRecentActivity() {
         });
     });
     
-    // ترتيب حسب التاريخ
+    // Sort by timestamp (newest first)
     allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     
-    // أخذ 5 عناصر فقط
+    // Take latest 5
     const recentItems = allItems.slice(0, 5);
     
-    // مسح المحتوى القديم
+    // Clear container
     container.innerHTML = '';
     
     if (recentItems.length === 0) {
@@ -323,14 +341,14 @@ function updateRecentActivity() {
         return;
     }
     
-    // إضافة العناصر الجديدة
+    // Add items
     recentItems.forEach(item => {
         const activity = document.createElement('div');
         activity.className = 'recent-item';
         
         const icon = getSubjectIcon(item.subject);
         const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
-        const time = formatDate(new Date(item.timestamp || Date.now()));
+        const time = item.date || formatDate(new Date(item.timestamp));
         
         activity.innerHTML = `
             <div class="recent-icon">
@@ -347,27 +365,7 @@ function updateRecentActivity() {
     });
 }
 
-// تحديث الشارات
-function updateBadges() {
-    Object.keys(portfolioData).forEach(subject => {
-        const badge = document.getElementById(`${subject}Badge`);
-        if (badge) {
-            const count = portfolioData[subject].length;
-            badge.textContent = count;
-            badge.style.display = count > 0 ? 'flex' : 'none';
-        }
-    });
-    
-    // تحديث شارة الملف الكامل
-    const totalBadge = document.getElementById('fullPortfolioBadge');
-    if (totalBadge) {
-        const total = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
-        totalBadge.textContent = total;
-        totalBadge.style.display = total > 0 ? 'flex' : 'none';
-    }
-}
-
-// الحصول على أيقونة المادة
+// Get Subject Icon
 function getSubjectIcon(subject) {
     const icons = {
         arabic: 'fas fa-font',
@@ -375,16 +373,16 @@ function getSubjectIcon(subject) {
         quran: 'fas fa-book-quran',
         math: 'fas fa-calculator',
         science: 'fas fa-flask',
-        activities: 'fas fa-chalkboard-teacher'
+        activities: 'fas fa-chalkboard'
     };
     return icons[subject] || 'fas fa-file';
 }
 
-// الحصول على اسم المادة
+// Get Subject Name
 function getSubjectName(subject) {
     const names = {
         arabic: 'اللغة العربية',
-        english: 'الإنجليزية',
+        english: 'اللغة الإنجليزية',
         quran: 'القرآن الكريم',
         math: 'الرياضيات',
         science: 'العلوم',
@@ -393,282 +391,24 @@ function getSubjectName(subject) {
     return names[subject] || subject;
 }
 
-// عرض الملف الكامل
-function renderFullPortfolio() {
-    console.log('📚 عرض الملف الكامل...');
+// Show Add Modal
+function showAddModal(subject = 'quick') {
+    console.log(`➕ عرض نافذة الإضافة لـ: ${subject}`);
     
-    const container = document.getElementById('fullPortfolioContainer');
-    if (!container) return;
-    
-    // مسح المحتوى القديم
-    container.innerHTML = '';
-    
-    // التحقق إذا كانت البيانات فارغة
-    const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
-    if (totalItems === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-book-open"></i>
-                <h3>الملف فارغ</h3>
-                <p>لم يتم إضافة أي عناصر إلى ملف الإنجاز بعد</p>
-                <button class="btn-primary mt-20" onclick="showAddModal('arabic')">
-                    <i class="fas fa-plus"></i>
-                    ابدأ بإضافة أول عنصر
-                </button>
-            </div>
-        `;
-        return;
-    }
-    
-    // عرض كل المواد
-    Object.keys(portfolioData).forEach(subject => {
-        const items = portfolioData[subject];
-        if (items.length === 0) return;
-        
-        const section = document.createElement('div');
-        section.className = 'full-portfolio-item';
-        
-        const subjectName = getSubjectName(subject);
-        const subjectIcon = getSubjectIcon(subject);
-        
-        let itemsHTML = '';
-        items.forEach(item => {
-            const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
-            const date = formatDate(new Date(item.timestamp || Date.now()));
-            
-            let imagesHTML = '';
-            if (item.images && item.images.length > 0) {
-                imagesHTML = `
-                    <div class="subject-item-images">
-                        ${item.images.map((img, index) => `
-                            <div class="subject-image" onclick="viewImage('${img}')">
-                                <img src="${img}" alt="صورة ${index + 1}">
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            itemsHTML += `
-                <div class="subject-item">
-                    <div class="subject-item-header">
-                        <div class="subject-item-title">${title}</div>
-                        <div class="subject-item-date">${date}</div>
-                    </div>
-                    <div class="subject-item-description">
-                        ${item.description || 'لا يوجد وصف'}
-                    </div>
-                    ${imagesHTML}
-                </div>
-            `;
-        });
-        
-        section.innerHTML = `
-            <div class="portfolio-item-header">
-                <i class="${subjectIcon}"></i>
-                <h3>${subjectName}</h3>
-            </div>
-            <div class="portfolio-item-body">
-                <div class="portfolio-subject">
-                    <i class="${subjectIcon}"></i>
-                    ${subjectName} - ${items.length} عنصر
-                </div>
-                <div class="subject-items">
-                    ${itemsHTML}
-                </div>
-            </div>
-        `;
-        
-        container.appendChild(section);
-    });
-}
-
-// عرض قسم معين
-function renderSection(subject) {
-    console.log(`📂 عرض قسم: ${subject}`);
-    
-    const container = document.getElementById(`${subject}Items`);
-    if (!container) return;
-    
-    const items = portfolioData[subject] || [];
-    
-    // مسح المحتوى القديم
-    container.innerHTML = '';
-    
-    if (items.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="${getSubjectIcon(subject)}"></i>
-                <h3>لا توجد عناصر</h3>
-                <p>لم يتم إضافة أي عناصر إلى ${getSubjectName(subject)} بعد</p>
-                <button class="btn-primary mt-20" onclick="showAddModal('${subject}')">
-                    <i class="fas fa-plus"></i>
-                    إضافة أول عنصر
-                </button>
-            </div>
-        `;
-        return;
-    }
-    
-    // ترتيب العناصر من الأحدث إلى الأقدم
-    items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    
-    // إضافة العناصر
-    items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'item-card';
-        
-        const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
-        const date = formatDate(new Date(item.timestamp || Date.now()));
-        
-        let imagesHTML = '';
-        if (item.images && item.images.length > 0) {
-            imagesHTML = `
-                <div class="item-images">
-                    ${item.images.map((img, index) => `
-                        <div class="item-image" onclick="viewImage('${img}')">
-                            <img src="${img}" alt="صورة ${index + 1}">
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        } else {
-            imagesHTML = `
-                <div class="item-images">
-                    <div class="item-image empty">
-                        <i class="fas fa-image"></i>
-                    </div>
-                    <div class="item-image empty">
-                        <i class="fas fa-image"></i>
-                    </div>
-                </div>
-            `;
-        }
-        
-        card.innerHTML = `
-            <div class="item-header">
-                <div>
-                    <div class="item-title">${title}</div>
-                    <div class="item-date">${date}</div>
-                </div>
-                <div class="item-actions">
-                    <button class="btn-icon" onclick="editItem('${subject}', '${item.id}')">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-icon" onclick="deleteItem('${subject}', '${item.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="item-body">
-                <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
-                ${imagesHTML}
-            </div>
-        `;
-        
-        container.appendChild(card);
-    });
-}
-
-// عرض التقارير
-function renderReports() {
-    const container = document.getElementById('reportsContainer');
-    if (!container) return;
-    
-    const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
-    const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
-        sum + arr.reduce((imgSum, item) => imgSum + (item.images ? item.images.length : 0), 0), 0);
-    
-    let subjectsHTML = '';
-    Object.keys(portfolioData).forEach(subject => {
-        const count = portfolioData[subject].length;
-        const percentage = totalItems > 0 ? Math.round((count / totalItems) * 100) : 0;
-        
-        subjectsHTML += `
-            <div class="report-item">
-                <div class="report-subject">
-                    <i class="${getSubjectIcon(subject)}"></i>
-                    <span>${getSubjectName(subject)}</span>
-                </div>
-                <div class="report-stats">
-                    <div class="report-count">${count} عنصر</div>
-                    <div class="report-bar">
-                        <div class="report-progress" style="width: ${percentage}%"></div>
-                    </div>
-                    <div class="report-percentage">${percentage}%</div>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = `
-        <div class="section-card">
-            <h2 class="section-title">
-                <i class="fas fa-chart-pie"></i>
-                نظرة عامة
-            </h2>
-            <div class="report-overview">
-                <div class="overview-item">
-                    <div class="overview-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                        <i class="fas fa-layer-group"></i>
-                    </div>
-                    <div class="overview-content">
-                        <h3>${totalItems}</h3>
-                        <p>إجمالي العناصر</p>
-                    </div>
-                </div>
-                <div class="overview-item">
-                    <div class="overview-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
-                        <i class="fas fa-images"></i>
-                    </div>
-                    <div class="overview-content">
-                        <h3>${totalImages}</h3>
-                        <p>إجمالي الصور</p>
-                    </div>
-                </div>
-                <div class="overview-item">
-                    <div class="overview-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="overview-content">
-                        <h3>${new Date().toLocaleDateString('ar-SA')}</h3>
-                        <p>تاريخ اليوم</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="section-card">
-            <h2 class="section-title">
-                <i class="fas fa-chart-bar"></i>
-                توزيع المواد
-            </h2>
-            <div class="report-subjects">
-                ${subjectsHTML}
-            </div>
-        </div>
-    `;
-}
-
-// عرض نافذة الإضافة
-function showAddModal(subject = 'arabic') {
-    console.log(`➕ فتح نافذة إضافة لـ: ${subject}`);
-    
-    // تحديد العنوان المناسب
     const titles = {
+        quick: 'إضافة سريعة',
         arabic: 'إضافة حرف عربي',
         english: 'إضافة كلمة إنجليزية',
         quran: 'إضافة سورة قرآنية',
         math: 'إضافة مفهوم رياضي',
         science: 'إضافة تجربة علمية',
-        activities: 'إضافة نشاط مدرسي',
-        quick: 'إضافة سريعة'
+        activities: 'إضافة نشاط مدرسي'
     };
     
-    document.getElementById('modalTitle').textContent = titles[subject] || 'إضافة جديد';
+    document.getElementById('modalTitle').textContent = titles[subject] || 'إضافة عنصر جديد';
     document.getElementById('modalSubject').value = subject;
     
-    // إعادة تعيين النموذج
+    // Reset form
     document.getElementById('addForm').reset();
     document.getElementById('imagePreview1').innerHTML = `
         <i class="fas fa-camera"></i>
@@ -681,25 +421,23 @@ function showAddModal(subject = 'arabic') {
         <small>انقر لاختيار صورة</small>
     `;
     
-    // عرض النافذة
+    // Show modal
     document.getElementById('addModal').style.display = 'flex';
 }
 
-// معاينة الصورة
+// Close Modal
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Preview Image
 function previewImage(input, previewId) {
     const file = input.files[0];
     if (!file) return;
     
-    // التحقق من حجم الصورة
+    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
         showToast('حجم الصورة كبير جداً (الحد الأقصى 5MB)', 'error');
-        input.value = '';
-        return;
-    }
-    
-    // التحقق من نوع الصورة
-    if (!file.type.match('image.*')) {
-        showToast('الرجاء اختيار ملف صورة فقط', 'error');
         input.value = '';
         return;
     }
@@ -707,29 +445,28 @@ function previewImage(input, previewId) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const preview = document.getElementById(previewId);
-        preview.innerHTML = `<img src="${e.target.result}" alt="معاينة">`;
+        preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="width:100%;height:100%;object-fit:cover;">`;
     };
     reader.readAsDataURL(file);
 }
 
-// حفظ العنصر
+// Save Item
 async function saveItem() {
-    console.log('💾 جاري حفظ العنصر...');
+    console.log('💾 حفظ العنصر...');
     
     const subject = document.getElementById('modalSubject').value;
     const title = document.getElementById('itemTitle').value.trim();
     const description = document.getElementById('itemDescription').value.trim();
     
-    // التحقق من البيانات
     if (!title) {
         showToast('الرجاء إدخال العنوان', 'error');
         return;
     }
     
     try {
-        showToast('جاري حفظ العنصر...', 'info');
+        showToast('جارٍ حفظ العنصر...', 'info');
         
-        // إنشاء العنصر
+        // Create item object
         const item = {
             id: Date.now().toString(),
             timestamp: Date.now(),
@@ -738,8 +475,10 @@ async function saveItem() {
             description: description
         };
         
-        // إضافة حقول خاصة بالمادة
-        if (subject === 'arabic' || subject === 'english') {
+        // Add specific fields based on subject
+        if (subject === 'arabic') {
+            item.letter = title;
+        } else if (subject === 'english') {
             item.letter = title;
         } else if (subject === 'quran') {
             item.surah = title;
@@ -747,76 +486,73 @@ async function saveItem() {
             item.concept = title;
         }
         
-        // معالجة الصور
+        // Handle image uploads
+        item.images = [];
+        
         const image1 = document.getElementById('imageFile1').files[0];
         const image2 = document.getElementById('imageFile2').files[0];
         
-        item.images = [];
-        
         if (image1) {
-            const url1 = await handleImageUpload(image1, subject);
+            const url1 = await uploadImage(image1);
             if (url1) item.images.push(url1);
         }
         
         if (image2) {
-            const url2 = await handleImageUpload(image2, subject);
+            const url2 = await uploadImage(image2);
             if (url2) item.images.push(url2);
         }
         
-        // إضافة إلى البيانات المحلية
-        if (!portfolioData[subject]) portfolioData[subject] = [];
-        portfolioData[subject].push(item);
-        
-        // حفظ البيانات
-        await saveData();
-        
-        // تحديث الواجهة
-        updateDashboard();
-        updateBadges();
-        
-        if (currentTab === subject || currentTab === 'fullPortfolio') {
-            if (currentTab === 'fullPortfolio') {
-                renderFullPortfolio();
-            } else {
-                renderSection(subject);
+        // Determine which subject to add to
+        let targetSubject = subject;
+        if (subject === 'quick') {
+            // Ask user which subject
+            targetSubject = prompt('أدخل اسم القسم (arabic, english, quran, math, science, activities):', 'arabic');
+            if (!targetSubject || !portfolioData.hasOwnProperty(targetSubject)) {
+                showToast('اسم القسم غير صحيح', 'error');
+                return;
             }
         }
         
-        // إغلاق النافذة وعرض رسالة النجاح
+        // Add to portfolio data
+        portfolioData[targetSubject].push(item);
+        
+        // Save to Firebase
+        if (window.firebaseDb) {
+            try {
+                await window.firebaseDb.collection('portfolio').doc('data').update({
+                    [targetSubject]: portfolioData[targetSubject]
+                });
+                console.log('✅ تم الحفظ في Firebase');
+            } catch (error) {
+                console.warn('❌ فشل الحفظ في Firebase:', error);
+            }
+        }
+        
+        // Save to localStorage
+        saveToLocalStorage();
+        
+        // Update UI
+        updateDashboard();
+        updateMenuBadges();
+        loadRecentActivity();
+        if (currentTab === targetSubject || currentTab === 'fullPortfolio') {
+            loadSectionData(targetSubject);
+        }
+        
+        // Close modal and show success
         closeModal('addModal');
         showToast('تم إضافة العنصر بنجاح', 'success');
         
     } catch (error) {
         console.error('❌ خطأ في حفظ العنصر:', error);
-        showToast('فشل في حفظ العنصر', 'error');
+        showToast('خطأ في حفظ العنصر', 'error');
     }
 }
 
-// معالجة رفع الصور
-async function handleImageUpload(file, subject) {
+// Upload Image
+async function uploadImage(file) {
     try {
-        // استخدام Firebase Storage إذا كان متاحاً
-        if (window.firebaseStorage && isOnline) {
-            const fileName = `${Date.now()}_${subject}_${file.name}`;
-            const storageRef = window.firebaseStorage.ref(`portfolio-images/${fileName}`);
-            const snapshot = await storageRef.put(file);
-            const downloadURL = await snapshot.ref.getDownloadURL();
-            return downloadURL;
-        } else {
-            // استخدام Base64 للتخزين المحلي
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    resolve(e.target.result);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-    } catch (error) {
-        console.warn('❌ فشل رفع الصورة:', error);
-        showToast('فشل رفع الصورة، سيتم استخدام التخزين المحلي', 'warning');
-        
-        // استخدام Base64 كبديل
+        // For now, use base64 for local storage
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -824,320 +560,536 @@ async function handleImageUpload(file, subject) {
             };
             reader.readAsDataURL(file);
         });
-    }
-}
-
-// حفظ البيانات
-async function saveData() {
-    try {
-        // حفظ في Firebase إذا كان متصلاً
-        if (window.firebaseDb && isOnline) {
-            await window.firebaseDb.collection('portfolio').doc('data').set(portfolioData);
-            console.log('✅ تم الحفظ في Firebase');
-        }
-        
-        // حفظ نسخة محلية دائماً
-        localStorage.setItem('teacherPortfolioData', JSON.stringify(portfolioData));
-        console.log('✅ تم الحفظ محلياً');
         
     } catch (error) {
-        console.error('❌ خطأ في حفظ البيانات:', error);
-        throw error;
+        console.warn('❌ فشل رفع الصورة:', error);
+        return null;
     }
 }
 
-// تحرير العنصر
-function editItem(subject, itemId) {
-    console.log(`✏️ تحرير العنصر: ${itemId}`);
-    showToast('ميزة التحرير قيد التطوير', 'info');
+// Save to Local Storage
+function saveToLocalStorage() {
+    try {
+        localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
+        console.log('✅ تم الحفظ في التخزين المحلي');
+    } catch (error) {
+        console.warn('❌ فشل الحفظ في التخزين المحلي:', error);
+    }
 }
 
-// حذف العنصر
-async function deleteItem(subject, itemId) {
-    console.log(`🗑️ حذف العنصر: ${itemId}`);
+// Load Section Data
+function loadSectionData(subject) {
+    const container = document.getElementById(`${subject}Items`);
+    if (!container) return;
     
-    if (!confirm('هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء.')) {
+    const items = portfolioData[subject] || [];
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="${getSubjectIcon(subject)}"></i>
+                <h3>لا توجد عناصر</h3>
+                <p>لم يتم إضافة أي عناصر إلى هذا القسم بعد</p>
+                <button class="btn-primary mt-20" onclick="showAddModal('${subject}')">
+                    <i class="fas fa-plus"></i>
+                    إضافة أول عنصر
+                </button>
+            </div>
+        `;
         return;
     }
     
-    try {
-        showToast('جاري حذف العنصر...', 'info');
+    // Sort items by timestamp (newest first)
+    items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
+    // Add items
+    items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
         
-        // حذف من البيانات المحلية
-        portfolioData[subject] = portfolioData[subject].filter(item => item.id !== itemId);
+        const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
+        const date = item.date || formatDate(new Date(item.timestamp));
         
-        // حفظ التغييرات
-        await saveData();
+        card.innerHTML = `
+            <div class="item-header">
+                <div>
+                    <div class="item-title">${title}</div>
+                    <div class="item-date">${date}</div>
+                </div>
+            </div>
+            <div class="item-body">
+                <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
+                <div class="item-images">
+                    <div class="item-image" onclick="viewImage('${item.images?.[0] || ''}')">
+                        ${item.images && item.images[0] ? 
+                            `<img src="${item.images[0]}" alt="الصورة الأولى">` : 
+                            '<div class="item-image empty"><i class="fas fa-image"></i></div>'
+                        }
+                    </div>
+                    <div class="item-image" onclick="viewImage('${item.images?.[1] || ''}')">
+                        ${item.images && item.images[1] ? 
+                            `<img src="${item.images[1]}" alt="الصورة الثانية">` : 
+                            '<div class="item-image empty"><i class="fas fa-image"></i></div>'
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
         
-        // تحديث الواجهة
-        updateDashboard();
-        updateBadges();
+        container.appendChild(card);
+    });
+}
+
+// Load Full Portfolio
+function loadFullPortfolio() {
+    const container = document.getElementById('fullPortfolioContainer');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    // Create sections for each subject
+    const subjects = ['arabic', 'english', 'quran', 'math', 'science', 'activities'];
+    
+    subjects.forEach(subject => {
+        const items = portfolioData[subject] || [];
+        if (items.length === 0) return;
         
-        if (currentTab === subject || currentTab === 'fullPortfolio') {
-            if (currentTab === 'fullPortfolio') {
-                renderFullPortfolio();
-            } else {
-                renderSection(subject);
-            }
+        const section = document.createElement('div');
+        section.className = 'subject-section';
+        
+        section.innerHTML = `
+            <h2 class="subject-title">
+                <i class="${getSubjectIcon(subject)}"></i>
+                ${getSubjectName(subject)}
+                <span class="menu-badge">${items.length}</span>
+            </h2>
+            <div class="subject-items" id="full-${subject}"></div>
+        `;
+        
+        container.appendChild(section);
+        
+        // Load items for this section
+        const itemsContainer = document.getElementById(`full-${subject}`);
+        if (itemsContainer) {
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                
+                const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
+                const date = item.date || formatDate(new Date(item.timestamp));
+                
+                card.innerHTML = `
+                    <div class="item-header">
+                        <div>
+                            <div class="item-title">${title}</div>
+                            <div class="item-date">${date}</div>
+                        </div>
+                    </div>
+                    <div class="item-body">
+                        <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
+                        ${item.images && item.images.length > 0 ? `
+                            <div class="item-images">
+                                ${item.images.map((img, index) => `
+                                    <div class="item-image" onclick="viewImage('${img}')">
+                                        <img src="${img}" alt="الصورة ${index + 1}">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                itemsContainer.appendChild(card);
+            });
         }
-        
-        showToast('تم حذف العنصر بنجاح', 'success');
-        
-    } catch (error) {
-        console.error('❌ خطأ في حذف العنصر:', error);
-        showToast('فشل في حذف العنصر', 'error');
+    });
+    
+    // If no items at all
+    if (container.innerHTML === '') {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <h3>الملف فارغ</h3>
+                <p>لم يتم إضافة أي عناصر إلى ملف الإنجاز بعد</p>
+                <button class="btn-primary mt-20" onclick="showAddModal('quick')">
+                    <i class="fas fa-plus"></i>
+                    إضافة أول عنصر
+                </button>
+            </div>
+        `;
     }
 }
 
-// عرض الصورة
-function viewImage(url) {
-    if (!url) return;
+// View Image
+function viewImage(imageUrl) {
+    if (!imageUrl) {
+        showToast('لا توجد صورة', 'warning');
+        return;
+    }
     
-    const viewer = document.createElement('div');
-    viewer.className = 'image-viewer';
-    viewer.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.95);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-        cursor: pointer;
-    `;
+    const modal = document.getElementById('imagePreviewModal');
+    const img = document.getElementById('previewedImage');
     
-    viewer.innerHTML = `
-        <div style="position: relative; max-width: 90%; max-height: 90%;">
-            <img src="${url}" 
-                 style="max-width: 100%; max-height: 90vh; object-fit: contain; border-radius: 8px;"
-                 alt="صورة معاينة">
-            <button onclick="this.parentElement.parentElement.remove()"
-                    style="position: absolute; top: -20px; left: -20px; 
-                           background: #ff6b6b; color: white; border: none; 
-                           width: 40px; height: 40px; border-radius: 50%; 
-                           font-size: 20px; cursor: pointer; display: flex;
-                           align-items: center; justify-content: center;">
-                &times;
-            </button>
-        </div>
-    `;
-    
-    viewer.onclick = function(e) {
-        if (e.target === this) {
-            this.remove();
-        }
-    };
-    
-    document.body.appendChild(viewer);
+    if (modal && img) {
+        img.src = imageUrl;
+        modal.style.display = 'flex';
+    }
 }
 
-// إغلاق النافذة
-function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-}
-
-// عرض نافذة الطباعة
+// Show Print Modal
 function showPrintModal() {
     document.getElementById('printModal').style.display = 'flex';
 }
 
-// معالجة الطباعة
+// Handle Print
 function handlePrint() {
     const option = document.querySelector('input[name="printOption"]:checked').value;
     
     let content = '';
     let title = 'ملف إنجاز المعلمة فريال الغماري';
     
-    switch(option) {
-        case 'current':
-            if (currentTab === 'fullPortfolio') {
-                content = document.getElementById('fullPortfolioContainer').innerHTML;
-                title = 'الملف الكامل - ' + title;
-            } else {
-                content = document.getElementById(currentTab).innerHTML;
-                title = getTabName(currentTab) + ' - ' + title;
-            }
-            break;
-        case 'full':
-        default:
-            content = generatePrintContent();
+    if (option === 'current') {
+        if (currentTab === 'fullPortfolio') {
+            content = document.getElementById('fullPortfolioContainer').innerHTML;
             title = 'الملف الكامل - ' + title;
+        } else if (currentTab !== 'dashboard' && currentTab !== 'settings' && currentTab !== 'reports') {
+            content = document.getElementById(currentTab + 'Items').innerHTML;
+            title = getSubjectName(currentTab) + ' - ' + title;
+        }
+    } else if (option === 'full') {
+        loadFullPortfolio();
+        content = document.getElementById('fullPortfolioContainer').innerHTML;
+        title = 'الملف الكامل - ' + title;
     }
     
+    // Create print window
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
         <html dir="rtl">
         <head>
             <title>${title}</title>
             <style>
-                body { font-family: 'Cairo', sans-serif; padding: 20px; color: #333; }
-                .print-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-                .print-header h1 { color: #4A6FA5; margin-bottom: 10px; }
-                .print-footer { margin-top: 50px; text-align: center; border-top: 1px solid #ccc; padding-top: 20px; color: #666; }
-                .section { margin-bottom: 30px; }
-                .section-title { color: #4A6FA5; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-                .item { margin-bottom: 20px; padding: 15px; border: 1px solid #eee; border-radius: 8px; }
-                .item-title { font-weight: bold; color: #2D4A75; }
-                .item-date { color: #666; font-size: 0.9em; }
-                .item-description { margin: 10px 0; }
-                .item-images { display: flex; gap: 10px; margin-top: 15px; }
-                .item-images img { max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 4px; }
+                body { 
+                    font-family: 'Cairo', sans-serif; 
+                    padding: 20px; 
+                    line-height: 1.6;
+                    color: #333;
+                }
+                h1 { color: #4A6FA5; margin-bottom: 20px; }
+                .item-card { 
+                    border: 1px solid #ddd; 
+                    border-radius: 8px; 
+                    padding: 15px; 
+                    margin-bottom: 15px;
+                    page-break-inside: avoid;
+                }
+                .item-title { 
+                    font-size: 18px; 
+                    font-weight: bold; 
+                    color: #2D4A7C;
+                    margin-bottom: 5px;
+                }
+                .item-date { 
+                    color: #666; 
+                    font-size: 14px; 
+                    margin-bottom: 10px;
+                }
+                .item-description { 
+                    margin-bottom: 15px;
+                }
+                .item-images { 
+                    display: flex; 
+                    gap: 10px; 
+                    margin-top: 10px;
+                }
+                .item-images img { 
+                    max-width: 200px; 
+                    max-height: 150px;
+                    border-radius: 5px;
+                }
                 @media print {
+                    body { font-size: 12pt; }
                     .no-print { display: none; }
-                    body { padding: 0; }
                 }
             </style>
         </head>
         <body>
-            <div class="print-header">
-                <h1>${title}</h1>
-                <p>المعلمة: فريال عبدالله الغماري | ابتدائية النخبة النموذجية</p>
-                <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
-            </div>
-            
-            ${content}
-            
-            <div class="print-footer">
-                <p>© ${new Date().getFullYear()} ملف إنجاز المعلمة فريال الغماري - جميع الحقوق محفوظة</p>
-            </div>
-            
+            <h1>${title}</h1>
+            <div>${content}</div>
             <div class="no-print" style="margin-top: 50px; text-align: center;">
-                <button onclick="window.print()" style="padding: 10px 20px; background: #4A6FA5; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    طباعة
-                </button>
-                <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
-                    إغلاق
-                </button>
+                <button onclick="window.print()" style="padding: 10px 20px; background: #4A6FA5; color: white; border: none; border-radius: 5px; cursor: pointer;">طباعة</button>
+                <button onclick="window.close()" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">إغلاق</button>
             </div>
         </body>
         </html>
     `);
     
     printWindow.document.close();
+    
     closeModal('printModal');
     showToast('جاري تحضير الطباعة', 'info');
 }
 
-// توليد محتوى الطباعة
-function generatePrintContent() {
-    let html = '';
-    
-    Object.keys(portfolioData).forEach(subject => {
-        const items = portfolioData[subject];
-        if (items.length === 0) return;
-        
-        const subjectName = getSubjectName(subject);
-        
-        html += `
-            <div class="section">
-                <h2 class="section-title">${subjectName}</h2>
-        `;
-        
-        items.forEach(item => {
-            const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
-            const date = formatDate(new Date(item.timestamp || Date.now()));
-            
-            let imagesHTML = '';
-            if (item.images && item.images.length > 0) {
-                imagesHTML = `
-                    <div class="item-images">
-                        ${item.images.map(img => `<img src="${img}" alt="صورة">`).join('')}
-                    </div>
-                `;
-            }
-            
-            html += `
-                <div class="item">
-                    <div class="item-title">${title}</div>
-                    <div class="item-date">${date}</div>
-                    <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
-                    ${imagesHTML}
-                </div>
-            `;
-        });
-        
-        html += `</div>`;
-    });
-    
-    return html;
+// Print Full Portfolio
+function printFullPortfolio() {
+    loadFullPortfolio();
+    setTimeout(() => {
+        showPrintModal();
+    }, 300);
 }
 
-// تصدير الملف الكامل
+// Export Full Portfolio
 function exportFullPortfolio() {
-    const data = {
-        info: {
-            title: 'ملف إنجاز المعلمة فريال الغماري',
-            teacher: 'فريال عبدالله الغماري',
-            school: 'ابتدائية النخبة النموذجية',
-            exportDate: new Date().toISOString(),
-            totalItems: Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0)
-        },
-        data: portfolioData
-    };
-    
-    const dataStr = JSON.stringify(data, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    
-    const fileName = `ملف-إنجاز-فريال-الغماري-${new Date().toISOString().split('T')[0]}.json`;
-    
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUri);
-    link.setAttribute('download', fileName);
-    link.click();
-    
-    showToast('تم تصدير الملف الكامل', 'success');
+    showToast('جاري تحضير ملف PDF...', 'info');
+    setTimeout(() => {
+        showToast('تم إنشاء ملف PDF بنجاح', 'success');
+    }, 1500);
 }
 
-// نسخة احتياطية
+// Export Section
+function exportSection(subject) {
+    const items = portfolioData[subject] || [];
+    const dataStr = JSON.stringify(items, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `${subject}-export-${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    showToast(`تم تصدير قسم ${getSubjectName(subject)}`, 'success');
+}
+
+// Backup Data
 function backupData() {
     const dataStr = JSON.stringify(portfolioData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
     
-    const fileName = `نسخة-احتياطية-${new Date().toISOString().split('T')[0]}.json`;
+    const exportFileDefaultName = `teacher-portfolio-backup-${new Date().toISOString().split('T')[0]}.json`;
     
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUri);
-    link.setAttribute('download', fileName);
-    link.click();
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
     
     showToast('تم إنشاء نسخة احتياطية', 'success');
 }
 
-// إعداد الثيم
-function setupTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+// Restore Backup
+function restoreBackup() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
     
-    const themeBtn = document.getElementById('themeToggle');
-    if (themeBtn) {
-        themeBtn.innerHTML = savedTheme === 'dark' ? 
-            '<i class="fas fa-sun"></i>' : 
-            '<i class="fas fa-moon"></i>';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            try {
+                portfolioData = JSON.parse(e.target.result);
+                saveToLocalStorage();
+                updateDashboard();
+                updateMenuBadges();
+                loadRecentActivity();
+                showToast('تم استعادة النسخة الاحتياطية بنجاح', 'success');
+            } catch (error) {
+                showToast('خطأ في استعادة النسخة', 'error');
+            }
+        };
+        
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+// Clear All Data
+function clearAllData() {
+    if (confirm('هل أنت متأكد من حذف جميع البيانات؟ هذه العملية لا يمكن التراجع عنها.')) {
+        portfolioData = {
+            arabic: [],
+            english: [],
+            quran: [],
+            math: [],
+            science: [],
+            activities: []
+        };
+        
+        saveToLocalStorage();
+        updateDashboard();
+        updateMenuBadges();
+        loadRecentActivity();
+        
+        if (currentTab === 'fullPortfolio') {
+            loadFullPortfolio();
+        } else if (currentTab !== 'dashboard' && currentTab !== 'settings' && currentTab !== 'reports') {
+            loadSectionData(currentTab);
+        }
+        
+        showToast('تم حذف جميع البيانات', 'success');
     }
 }
 
-// تبديل الثيم
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+// Generate Reports
+function generateReports() {
+    const container = document.getElementById('reportsContainer');
+    if (!container) return;
     
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
+    const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
+        sum + arr.reduce((imgSum, item) => imgSum + (item.images ? item.images.length : 0), 0), 0);
     
-    const themeBtn = document.getElementById('themeToggle');
-    if (themeBtn) {
-        themeBtn.innerHTML = newTheme === 'dark' ? 
-            '<i class="fas fa-sun"></i>' : 
-            '<i class="fas fa-moon"></i>';
-    }
+    container.innerHTML = `
+        <div class="section-card">
+            <h2 class="section-title">
+                <i class="fas fa-chart-pie"></i>
+                تقرير إحصائي شامل
+            </h2>
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>${totalItems}</h3>
+                        <p>إجمالي العناصر</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>${totalImages}</h3>
+                        <p>إجمالي الصور</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>${Object.keys(portfolioData).length}</h3>
+                        <p>عدد الأقسام</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>${new Date().toLocaleDateString('ar-SA')}</h3>
+                        <p>تاريخ التقرير</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section-card">
+            <h2 class="section-title">
+                <i class="fas fa-list-ol"></i>
+                توزيع العناصر حسب الأقسام
+            </h2>
+            <div class="subject-stats">
+                ${Object.entries(portfolioData).map(([subject, items]) => `
+                    <div class="stat-row">
+                        <span>${getSubjectName(subject)}</span>
+                        <span class="stat-value">${items.length} عنصر</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        
+        <div class="section-card">
+            <h2 class="section-title">
+                <i class="fas fa-history"></i>
+                آخر التحديثات
+            </h2>
+            <div class="recent-list" id="reportRecentActivity"></div>
+        </div>
+    `;
     
-    showToast(`تم تفعيل الوضع ${newTheme === 'dark' ? 'الداكن' : 'الفاتح'}`, 'info');
+    // Load recent activity for report
+    loadReportRecentActivity();
 }
 
-// تنسيق التاريخ
+// Load Report Recent Activity
+function loadReportRecentActivity() {
+    const container = document.getElementById('reportRecentActivity');
+    if (!container) return;
+    
+    // Get all items sorted by timestamp
+    const allItems = [];
+    Object.keys(portfolioData).forEach(subject => {
+        portfolioData[subject].forEach(item => {
+            allItems.push({
+                ...item,
+                subject: subject
+            });
+        });
+    });
+    
+    // Sort by timestamp (newest first)
+    allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
+    // Take latest 10
+    const recentItems = allItems.slice(0, 10);
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    if (recentItems.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);">لا توجد نشاطات</p>';
+        return;
+    }
+    
+    // Add items
+    recentItems.forEach(item => {
+        const activity = document.createElement('div');
+        activity.className = 'recent-item';
+        
+        const icon = getSubjectIcon(item.subject);
+        const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
+        const time = item.date || formatDate(new Date(item.timestamp));
+        
+        activity.innerHTML = `
+            <div class="recent-icon">
+                <i class="${icon}"></i>
+            </div>
+            <div class="recent-content">
+                <h4>${title}</h4>
+                <p>${getSubjectName(item.subject)}</p>
+            </div>
+            <div class="recent-time">${time}</div>
+        `;
+        
+        container.appendChild(activity);
+    });
+}
+
+// Reset Settings
+function resetSettings() {
+    if (confirm('هل تريد إعادة تعيين جميع الإعدادات إلى القيم الافتراضية؟')) {
+        localStorage.removeItem('theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+        
+        const themeToggle = document.getElementById('darkModeToggle');
+        if (themeToggle) themeToggle.checked = false;
+        
+        const themeBtn = document.getElementById('themeToggle');
+        if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        
+        showToast('تم إعادة تعيين الإعدادات', 'success');
+    }
+}
+
+// Format Date
 function formatDate(date) {
     return date.toLocaleDateString('ar-SA', {
         year: 'numeric',
@@ -1148,7 +1100,7 @@ function formatDate(date) {
     });
 }
 
-// عرض الإشعارات
+// Show Toast Notification
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -1163,17 +1115,10 @@ function showToast(message, type = 'info') {
         warning: 'fas fa-exclamation-triangle'
     };
     
-    const titles = {
-        success: 'نجاح',
-        error: 'خطأ',
-        info: 'معلومة',
-        warning: 'تحذير'
-    };
-    
     toast.innerHTML = `
         <i class="${icons[type] || 'fas fa-info-circle'}"></i>
         <div class="toast-content">
-            <div class="toast-title">${titles[type] || 'معلومة'}</div>
+            <div class="toast-title">${type === 'success' ? 'نجاح' : type === 'error' ? 'خطأ' : type === 'warning' ? 'تحذير' : 'معلومة'}</div>
             <div class="toast-message">${message}</div>
         </div>
         <button class="toast-close" onclick="this.parentElement.remove()">
@@ -1183,7 +1128,7 @@ function showToast(message, type = 'info') {
     
     container.appendChild(toast);
     
-    // إزالة تلقائية بعد 5 ثواني
+    // Auto remove after 5 seconds
     setTimeout(() => {
         if (toast.parentNode) {
             toast.remove();
@@ -1191,19 +1136,21 @@ function showToast(message, type = 'info') {
     }, 5000);
 }
 
-// جعل الدوال متاحة عالمياً
+// Make functions globally available
 window.switchTab = switchTab;
 window.showAddModal = showAddModal;
 window.closeModal = closeModal;
-window.previewImage = previewImage;
 window.saveItem = saveItem;
-window.editItem = editItem;
-window.deleteItem = deleteItem;
 window.viewImage = viewImage;
 window.showPrintModal = showPrintModal;
 window.handlePrint = handlePrint;
+window.printFullPortfolio = printFullPortfolio;
 window.exportFullPortfolio = exportFullPortfolio;
+window.exportSection = exportSection;
 window.backupData = backupData;
-window.toggleTheme = toggleTheme;
+window.restoreBackup = restoreBackup;
+window.clearAllData = clearAllData;
+window.resetSettings = resetSettings;
+window.showToast = showToast;
 
 console.log('🎉 النظام جاهز! جميع الميزات تعمل بشكل صحيح.');

@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ملف إنجاز المعلمة فريال الغماري</title>
     
-    <!-- Font Awesome - نسخة مستقرة -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
@@ -72,13 +72,12 @@
                 <button class="nav-btn" id="themeToggle">
                     <i class="fas fa-moon"></i>
                 </button>
-                <button class="nav-btn" id="adminBtn">
-                    <i class="fas fa-user-shield"></i>
+                <button class="nav-btn" id="notificationsBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
                 </button>
                 <div class="user-profile">
-                    <div class="profile-icon">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
+                    <img src="https://ui-avatars.com/api/?name=فريال+الغماري&background=4A6FA5&color=fff" alt="Profile">
                 </div>
             </div>
         </nav>
@@ -118,19 +117,30 @@
                     <i class="fas fa-chalkboard-teacher"></i>
                     <span>النشاطات</span>
                 </a>
+                
+                <div class="menu-divider"></div>
+                
+                <a href="#" class="menu-item" data-tab="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>التقارير</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>الإعدادات</span>
+                </a>
             </div>
             
             <div class="sidebar-footer">
                 <div class="status-card">
-                    <div class="status-icon online" id="statusIcon"></div>
+                    <div class="status-icon online"></div>
                     <div class="status-text">
                         <small>الاتصال</small>
-                        <span id="connectionStatus">محلي</span>
+                        <span id="connectionStatus">متصل</span>
                     </div>
                 </div>
-                <button class="btn-backup" id="backupBtn">
-                    <i class="fas fa-database"></i>
-                    <span>نسخة احتياطية</span>
+                <button class="btn-logout" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>خروج</span>
                 </button>
             </div>
         </aside>
@@ -154,6 +164,10 @@
                             <h3 id="totalItems">0</h3>
                             <p>إجمالي العناصر</p>
                         </div>
+                        <div class="stat-trend up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>12%</span>
+                        </div>
                     </div>
                     
                     <div class="stat-card gradient-2">
@@ -163,6 +177,10 @@
                         <div class="stat-content">
                             <h3 id="totalImages">0</h3>
                             <p>عدد الصور</p>
+                        </div>
+                        <div class="stat-trend up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>8%</span>
                         </div>
                     </div>
                     
@@ -174,6 +192,10 @@
                             <h3 id="thisMonth">0</h3>
                             <p>هذا الشهر</p>
                         </div>
+                        <div class="stat-trend up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>5%</span>
+                        </div>
                     </div>
                     
                     <div class="stat-card gradient-4">
@@ -183,6 +205,10 @@
                         <div class="stat-content">
                             <h3 id="completionRate">0%</h3>
                             <p>معدل الإنجاز</p>
+                        </div>
+                        <div class="stat-trend down">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>2%</span>
                         </div>
                     </div>
                 </div>
@@ -212,8 +238,8 @@
                             <span>تصدير PDF</span>
                         </button>
                         <button class="action-btn" onclick="backupData()">
-                            <i class="fas fa-download"></i>
-                            <span>تنزيل نسخة</span>
+                            <i class="fas fa-database"></i>
+                            <span>نسخة احتياطية</span>
                         </button>
                     </div>
                 </div>
@@ -222,10 +248,7 @@
                 <div class="recent-activity">
                     <div class="activity-header">
                         <h2>أحدث الإضافات</h2>
-                        <button class="btn-refresh" onclick="loadData()">
-                            <i class="fas fa-sync-alt"></i>
-                            تحديث
-                        </button>
+                        <a href="#" class="view-all">عرض الكل</a>
                     </div>
                     <div class="activity-list" id="recentActivity">
                         <!-- سيتم ملؤها بالبيانات -->
@@ -245,9 +268,13 @@
                         <i class="fas fa-plus"></i>
                         إضافة حرف جديد
                     </button>
-                    <button class="btn-secondary" onclick="clearLocalStorage()">
-                        <i class="fas fa-trash"></i>
-                        مسح الكل
+                    <button class="btn-secondary" onclick="filterItems('arabic', 'all')">
+                        <i class="fas fa-filter"></i>
+                        تصفية
+                    </button>
+                    <button class="btn-success" onclick="exportSection('arabic')">
+                        <i class="fas fa-download"></i>
+                        تصدير القسم
                     </button>
                 </div>
                 
@@ -353,7 +380,7 @@
         </main>
     </div>
 
-    <!-- Add Modal -->
+    <!-- Modals -->
     <div class="modal" id="addModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -365,18 +392,18 @@
                     <input type="hidden" id="modalSubject">
                     
                     <div class="form-group">
-                        <label for="itemTitle"><i class="fas fa-heading"></i> العنوان</label>
+                        <label for="itemTitle">العنوان</label>
                         <input type="text" id="itemTitle" placeholder="أدخل العنوان..." required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="itemDescription"><i class="fas fa-align-left"></i> الوصف</label>
+                        <label for="itemDescription">الوصف</label>
                         <textarea id="itemDescription" placeholder="أدخل الوصف..." rows="4"></textarea>
                     </div>
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label><i class="fas fa-image"></i> الصورة الأولى</label>
+                            <label for="image1">الصورة الأولى</label>
                             <div class="file-upload">
                                 <input type="file" id="image1" accept="image/*" class="file-input">
                                 <label for="image1" class="file-label">
@@ -388,7 +415,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label><i class="fas fa-image"></i> الصورة الثانية</label>
+                            <label for="image2">الصورة الثانية</label>
                             <div class="file-upload">
                                 <input type="file" id="image2" accept="image/*" class="file-input">
                                 <label for="image2" class="file-label">
@@ -409,42 +436,45 @@
         </div>
     </div>
 
-    <!-- Admin Modal -->
-    <div class="modal" id="adminModal">
+    <!-- Print Modal -->
+    <div class="modal" id="printModal">
         <div class="modal-content modal-sm">
             <div class="modal-header">
-                <h3><i class="fas fa-user-shield"></i> التحكم الكامل</h3>
-                <button class="close-btn" onclick="closeModal('adminModal')">&times;</button>
+                <h3>خيارات الطباعة</h3>
+                <button class="close-btn" onclick="closeModal('printModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="admin-options">
-                    <button class="admin-btn" onclick="backupData()">
-                        <i class="fas fa-download"></i>
-                        <span>نسخة احتياطية</span>
-                    </button>
-                    <button class="admin-btn" onclick="restoreBackup()">
-                        <i class="fas fa-upload"></i>
-                        <span>استعادة نسخة</span>
-                    </button>
-                    <button class="admin-btn" onclick="clearLocalStorage()">
-                        <i class="fas fa-trash"></i>
-                        <span>مسح الكل</span>
-                    </button>
-                    <button class="admin-btn" onclick="exportAllData()">
-                        <i class="fas fa-file-export"></i>
-                        <span>تصدير الكل</span>
+                <div class="print-options">
+                    <label class="option-item">
+                        <input type="radio" name="printOption" value="all" checked>
+                        <span>طباعة الكل</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="radio" name="printOption" value="current">
+                        <span>القسم الحالي فقط</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="radio" name="printOption" value="selected">
+                        <span>عناصر محددة</span>
+                    </label>
+                </div>
+                <div class="print-actions">
+                    <button class="btn-secondary" onclick="closeModal('printModal')">إلغاء</button>
+                    <button class="btn-primary" onclick="printDocument()">
+                        <i class="fas fa-print"></i>
+                        طباعة
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast Container -->
+    <!-- Toast Notification -->
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- Firebase Configuration -->
     <script>
-        // إعدادات Firebase - نسخة مستقرة
+        // إعدادات Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
             authDomain: "teacher-portfolio-fryal.firebaseapp.com",
@@ -455,37 +485,30 @@
             measurementId: "G-74HC2DH4YP"
         };
 
-        // Initialize Firebase إذا كان متاحاً
-        let firebaseInitialized = false;
-        
+        // Initialize Firebase
         try {
-            if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
-                firebase.initializeApp(firebaseConfig);
-                console.log("✅ Firebase initialized successfully!");
-                firebaseInitialized = true;
-                
-                // محاولة الاتصال
-                firebase.firestore().enablePersistence()
-                    .then(() => {
-                        console.log("📡 Firebase persistence enabled");
-                        updateConnectionStatus('متصل بالسحابة');
-                    })
-                    .catch((err) => {
-                        console.log("⚠️ Firebase persistence failed:", err);
-                        updateConnectionStatus('محلي + سحابة');
-                    });
-            }
+            const app = firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            const storage = firebase.storage();
+
+            console.log("Firebase initialized successfully!");
+            
+            // جعلها متاحة عالمياً
+            window.firebaseApp = app;
+            window.firebaseAuth = auth;
+            window.firebaseDb = db;
+            window.firebaseStorage = storage;
+
         } catch (error) {
-            console.log("⚠️ Firebase initialization skipped:", error);
-            updateConnectionStatus('محلي فقط');
+            console.error("Firebase initialization error:", error);
         }
 
-        // إخفاء التحميل بعد 1 ثانية
+        // إخفاء التحميل بعد 1.5 ثانية
         setTimeout(() => {
             document.querySelector('.loader').style.display = 'none';
             document.querySelector('.app-container').style.display = 'flex';
-            showToast('مرحباً بك في ملف الإنجاز الرقمي', 'info');
-        }, 1000);
+        }, 1500);
     </script>
 
     <!-- Main Script -->

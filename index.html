@@ -5,29 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ملف إنجاز المعلمة فريال الغماري</title>
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/api/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome - رابط صحيح -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.css">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
     
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
     
     <style>
-        /* إصلاح Font Awesome */
-        @font-face {
-            font-family: 'Font Awesome 6 Free';
-            font-style: normal;
-            font-weight: 900;
-            src: url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2) format('woff2');
-        }
-        
-        .fa, .fas, .far, .fal, .fad, .fab {
-            font-family: 'Font Awesome 6 Free' !important;
-            font-weight: 900 !important;
-        }
-        
         /* تحميل سريع */
         body {
             opacity: 0;
@@ -79,8 +72,8 @@
                         <span>ابتدائية النخبة</span>
                     </div>
                     <div class="info-item" id="connectionStatusItem">
-                        <i class="fas fa-hdd"></i>
-                        <span id="connectionStatus">تخزين محلي</span>
+                        <i class="fas fa-wifi"></i>
+                        <span id="connectionStatus">محلي</span>
                     </div>
                 </div>
             </div>
@@ -509,12 +502,12 @@
                             <div class="setting-item">
                                 <label>
                                     <i class="fas fa-image"></i>
-                                    ضغط الصور
+                                    جودة الصور
                                 </label>
-                                <select id="imageCompression">
-                                    <option value="high" selected>عالية الجودة</option>
-                                    <option value="medium">متوسطة</option>
-                                    <option value="low">عالية الضغط</option>
+                                <select id="imageQuality">
+                                    <option value="high">عالية الجودة</option>
+                                    <option value="medium" selected>متوسطة</option>
+                                    <option value="low">منخفضة</option>
                                 </select>
                             </div>
                         </div>
@@ -533,71 +526,25 @@
                                     <span class="slider"></span>
                                 </label>
                             </div>
-                            <button class="btn-secondary" onclick="backupData()">
+                            <button class="btn-secondary" onclick="clearAllData()">
+                                <i class="fas fa-trash"></i>
+                                حذف جميع البيانات
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-card">
+                        <h3><i class="fas fa-tools"></i> الأدوات</h3>
+                        <div class="setting-content">
+                            <button class="btn-primary" onclick="backupData()">
                                 <i class="fas fa-download"></i>
                                 نسخة احتياطية
                             </button>
-                            <button class="btn-secondary mt-10" onclick="restoreBackup()">
+                            <button class="btn-secondary" onclick="restoreBackup()">
                                 <i class="fas fa-upload"></i>
                                 استعادة نسخة
                             </button>
-                        </div>
-                    </div>
-                    
-                    <div class="setting-card">
-                        <h3><i class="fas fa-trash-alt"></i> حذف البيانات</h3>
-                        <div class="setting-content">
-                            <p class="text-muted mb-20">احذر: هذه العمليات لا يمكن التراجع عنها</p>
-                            
-                            <button class="btn-danger" onclick="deleteAllItems('arabic')">
-                                <i class="fas fa-trash"></i>
-                                حذف كل عناصر العربية
-                            </button>
-                            
-                            <button class="btn-danger mt-10" onclick="deleteAllItems('english')">
-                                <i class="fas fa-trash"></i>
-                                حذف كل عناصر الإنجليزية
-                            </button>
-                            
-                            <button class="btn-danger mt-10" onclick="deleteAllItems('quran')">
-                                <i class="fas fa-trash"></i>
-                                حذف كل السور القرآنية
-                            </button>
-                            
-                            <button class="btn-danger mt-10" onclick="deleteAllItems('math')">
-                                <i class="fas fa-trash"></i>
-                                حذف كل مفاهيم الرياضيات
-                            </button>
-                            
-                            <button class="btn-danger mt-10" onclick="deleteAllItems('science')">
-                                <i class="fas fa-trash"></i>
-                                حذف كل تجارب العلوم
-                            </button>
-                            
-                            <button class="btn-danger mt-10" onclick="deleteAllItems('activities')">
-                                <i class="fas fa-trash"></i>
-                                حذف كل النشاطات
-                            </button>
-                            
-                            <button class="btn-danger mt-20" onclick="clearAllData()">
-                                <i class="fas fa-bomb"></i>
-                                حذف كل البيانات
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="setting-card">
-                        <h3><i class="fas fa-tools"></i> أدوات</h3>
-                        <div class="setting-content">
-                            <button class="btn-primary" onclick="compressAllImages()">
-                                <i class="fas fa-compress-alt"></i>
-                                ضغط جميع الصور
-                            </button>
-                            <button class="btn-secondary mt-10" onclick="optimizeStorage()">
-                                <i class="fas fa-optimize"></i>
-                                تحسين التخزين
-                            </button>
-                            <button class="btn-success mt-10" onclick="resetSettings()">
+                            <button class="btn-success" onclick="resetSettings()">
                                 <i class="fas fa-redo"></i>
                                 إعادة تعيين الإعدادات
                             </button>
@@ -618,7 +565,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="addForm" onsubmit="event.preventDefault(); saveItem();">
+                <form id="addForm">
                     <input type="hidden" id="modalSubject">
                     
                     <div class="form-group">
@@ -643,7 +590,7 @@
                     
                     <div class="form-section">
                         <h4><i class="fas fa-images"></i> الصور (اختياري)</h4>
-                        <p class="section-description">يمكنك رفع صورتين لكل نشاط - سيتم ضغطها تلقائياً</p>
+                        <p class="section-description">يمكنك رفع صورتين لكل نشاط</p>
                         
                         <div class="image-upload-grid">
                             <div class="image-upload-box" onclick="document.getElementById('imageFile1').click()">
@@ -673,7 +620,7 @@
                             <i class="fas fa-times"></i>
                             إلغاء
                         </button>
-                        <button type="submit" class="btn-primary">
+                        <button type="button" class="btn-primary" onclick="saveItem()">
                             <i class="fas fa-save"></i>
                             حفظ العنصر
                         </button>
@@ -705,6 +652,11 @@
                             <i class="fas fa-folder"></i>
                             <span>القسم الحالي فقط</span>
                         </label>
+                        <label class="option-label">
+                            <input type="radio" name="printOption" value="selected">
+                            <i class="fas fa-check-circle"></i>
+                            <span>عناصر محددة</span>
+                        </label>
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -735,10 +687,38 @@
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Main Script -->
-    <script src="script.js"></script>
-    
+    <!-- Firebase Configuration -->
     <script>
+        // إعدادات Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
+            authDomain: "teacher-portfolio-fryal.firebaseapp.com",
+            projectId: "teacher-portfolio-fryal",
+            storageBucket: "teacher-portfolio-fryal.firebasestorage.app",
+            messagingSenderId: "1054582250352",
+            appId: "1:1054582250352:web:0fbb6f5a8c2763ffcc4db5",
+            measurementId: "G-74HC2DH4YP"
+        };
+
+        // Initialize Firebase
+        try {
+            const app = firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            const storage = firebase.storage();
+
+            console.log("✅ Firebase initialized successfully!");
+            
+            // جعلها متاحة عالمياً
+            window.firebaseApp = app;
+            window.firebaseAuth = auth;
+            window.firebaseDb = db;
+            window.firebaseStorage = storage;
+
+        } catch (error) {
+            console.error("❌ Firebase initialization error:", error);
+        }
+
         // إخفاء التحميل
         setTimeout(() => {
             const loader = document.querySelector('.loader');
@@ -754,7 +734,21 @@
             setTimeout(() => {
                 showToast('مرحباً بك في ملف الإنجاز الرقمي', 'success');
             }, 500);
-        }, 1000);
+        }, 1500);
+        
+        // دالة إظهار الإشعارات (مؤقتة حتى يتم تحميل script.js)
+        window.showToast = function(message, type = 'info') {
+            console.log(`[Toast] ${type}: ${message}`);
+        };
+        
+        // دالة إغلاق النافذة المنبثقة
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = 'none';
+        };
     </script>
+
+    <!-- Main Script -->
+    <script src="script.js"></script>
 </body>
 </html>

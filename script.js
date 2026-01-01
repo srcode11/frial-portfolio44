@@ -106,7 +106,7 @@ function setupUI() {
     console.log('✅ تم إعداد واجهة المستخدم');
 }
 
-// ===== تهيئة Firebase =====
+// ===== تهيئة Firebase المعدلة =====
 async function initFirebase() {
     console.log('🔥 جاري تهيئة Firebase...');
     
@@ -116,8 +116,9 @@ async function initFirebase() {
             throw new Error('Firebase SDK غير متاح');
         }
         
-        // تهيئة التطبيق
-        if (!window.firebase.apps.length) {
+        // التحقق من التهيئة السابقة
+        if (!window.firebase.apps || window.firebase.apps.length === 0) {
+            // تهيئة جديدة
             window.firebase.initializeApp({
                 apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
                 authDomain: "teacher-portfolio-fryal.firebaseapp.com",
@@ -129,68 +130,137 @@ async function initFirebase() {
             });
         }
         
-        // تسجيل الدخول كضيف
-        await window.firebase.auth().signInAnonymously();
+        // الانتظار قليلاً قبل تسجيل الدخول
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // محاولة تسجيل الدخول كضيف
+        const auth = window.firebase.auth();
+        await auth.signInAnonymously();
         
         // مستمع لحالة المستخدم
-        window.firebase.auth().onAuthStateChanged((user) => {
+        auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
                 firebaseInitialized = true;
                 updateConnectionStatus('متصل بـ Firebase');
-                showToast('تم الاتصال بنجاح مع السحابة', 'success');
+                showToast('✅ تم الاتصال مع السحابة بنجاح', 'success');
                 console.log('👤 المستخدم:', user.uid);
+                
+                // تحميل البيانات من Firebase بعد الاتصال
+                loadDataFromFirebase();
             }
         });
         
         console.log('✅ Firebase جاهز للاستخدام');
         
     } catch (error) {
-        console.warn('⚠️ Firebase فشل، جاري استخدام التخزين المحلي:', error);
-        firebaseInitialized = false;
-        updateConnectionStatus('محلي فقط');
-        showToast('التخزين المحلي مفعل', 'warning');
-        throw error; // لمعالجة الخطأ في المستوى الأعلى
-    }
-}
-
-// ===== تحديث حالة الاتصال =====
-function updateConnectionStatus(status) {
-    const statusElement = document.getElementById('connectionStatus');
-    if (statusElement) {
-        statusElement.textContent = status;
+        console.warn('⚠️ Firebase فشل، جاري استخدام التخزين المحلي:', error.message);
         
-        // تغيير اللون حسب الحالة
-        if (status.includes('Firebase')) {
-            statusElement.style.color = '#4cc9f0';
-        } else {
-            statusElement.style.color = '#f72585';
-        }
+        // محاولة بديلة: إنشاء مستخدم مؤقت
+        tryAlternativeLogin();
     }
 }
 
-// ===== تحميل البيانات =====
-async function loadData() {
-    console.log('📥 جاري تحميل البيانات...');
+// ===== محاولة تسجيل بديل =====
+async function tryAlternativeLogin() {
+    console.log('🔄 جاري محاولة تسجيل بديل...');
     
     try {
-        if (firebaseInitialized) {
-            // تحميل من Firebase
-            const db = window.firebase.firestore();
-            const docRef = db.collection('portfolio').doc('data');
-            const docSnap = await docRef.get();
+        if (!window.firebase || !window.firebase.auth) {
+            throw new Error('Firebase غير متاح');
+        }
+        
+        const auth = window.firebase.auth();
+        const email = `teacher_${Date.now()}@portfolio.com`;
+        const password = 'TempPass123';
+        
+        // محاولة إنشاء حساب مؤقت
+        await auth.createUserWithEmailAndPassword(email, password);
+        
+        // نجح - تحديث الحالة
+        firebaseInitialized = true;
+        updateConnectionStatus('متصل (مؤقت)');
+        showToast('✅ اتصال مؤقت مفعل', 'info');
+        
+        // تحميل البيانات
+        loadDataFromFirebase();
+        
+    } catch (error) {
+        console.warn('❌ فشلت جميع محاولات الاتصال:', error.message);
+        firebaseInitialized = false;
+        updateConnectionStatus('محلي فقط');
+        showToast('⚡ التخزين المحلي مفعل', 'warning');
+        
+        // استخدام التخزين المحلي
+        loadLocalData();
+    }
+}
+
+// ===== تحميل البيانات من Firebase =====
+async function loadDataFromFirebase() {
+    console.log('📥 جاري تحميل البيانات من Firebase...');
+    
+    try {
+        const db = window.firebase.firestore();
+        const docRef = db.collection('portfolio').doc('data');
+        const docSnap = await docRef.get();
+        
+        if (docSnap.exists()) {
+            portfolioData = docSnap.data();
+            console.log('✅ تم تحميل البيانات من Firebase');
+            showToast('📂 تم تحميل البيانات من السحابة', 'success');
             
-            if (docSnap.exists()) {
-                portfolioData = docSnap.data();
-                console.log('✅ تم تحميل البيانات من Firebase');
-                showToast('تم تحميل البيانات من السحابة', 'success');
-            } else {
-                // إنشاء وثيقة جديدة
-                await docRef.set(portfolioData);
-                console.log('📝 تم إنشاء ملف جديد في Firebase');
-                showToast('تم إنشاء ملف جديد', 'info');
-            }
+            // حفظ نسخة محلية احتياطية
+            localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
+            
+            // تحديث الواجهة
+            updateUI();
         } else {
+            // إنشاء وثيقة جديدة
+            await docRef.set(portfolioData);
+            console.log('📝 تم إنشاء ملف جديد في Firebase');
+            showToast('🆕 تم إنشاء ملف جديد', 'info');
+        }
+        
+    } catch (error) {
+        console.error('❌ خطأ في تحميل البيانات من Firebase:', error);
+        showToast('⚠️ خطأ في تحميل البيانات من السحابة', 'warning');
+        
+        // المحاولة بالبيانات المحلية
+        loadLocalData();
+    }
+}
+
+// ===== تحميل البيانات المحلية =====
+function loadLocalData() {
+    console.log('📁 جاري تحميل البيانات المحلية...');
+    
+    const saved = localStorage.getItem('teacherPortfolio');
+    if (saved) {
+        try {
+            portfolioData = JSON.parse(saved);
+            console.log('✅ تم تحميل البيانات من التخزين المحلي');
+            showToast('💾 تم تحميل البيانات المحلية', 'info');
+            
+            // تحديث الواجهة
+            updateUI();
+        } catch (e) {
+            console.error('❌ خطأ في تحليل البيانات المحلية:', e);
+            portfolioData = {
+                arabic: [],
+                english: [],
+                quran: [],
+                math: [],
+                science: [],
+                activities: []
+            };
+            showToast('🔄 تم إنشاء ملف جديد', 'info');
+        }
+    } else {
+        console.log('📝 لا توجد بيانات محلية، سيتم إنشاء ملف جديد');
+        showToast('🆕 تم إنشاء ملف جديد', 'info');
+    }
+}
             // تحميل من التخزين المحلي
             loadLocalData();
         }

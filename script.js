@@ -1,1115 +1,1088 @@
-// نظام ملف إنجاز المعلمة - كامل الوظائف
-console.log('🌟 نظام ملف الإنجاز - جاهز للعمل');
-
-// البيانات الرئيسية
-let portfolioData = {
-    arabic: [],
-    english: [],
-    quran: [],
-    math: [],
-    science: [],
-    activities: []
-};
-
-// متغيرات النظام
-let currentTab = 'dashboard';
-let activeToasts = [];
-let sidebarVisible = true;
-
-// تهيئة التطبيق
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 بدء تهيئة التطبيق...');
-    
-    // إعداد المستمعين للأحداث
-    setupEventListeners();
-    
-    // تحميل البيانات المحفوظة
-    loadData();
-    
-    // إعداد الوضع المظلم/فاتح
-    setupTheme();
-    
-    // إعداد القائمة الجانبية
-    setupSidebar();
-    
-    // إخفاء شاشة التحميل
-    setTimeout(() => {
-        document.querySelector('.loader').style.display = 'none';
-        document.querySelector('.app-container').style.display = 'flex';
-        showToast('مرحباً بك في ملف الإنجاز الرقمي', 'success');
-    }, 1500);
-    
-    console.log('✅ التطبيق جاهز للاستخدام');
-});
-
-// إعداد المستمعين للأحداث
-function setupEventListeners() {
-    console.log('🔧 إعداد المستمعين للأحداث...');
-    
-    // زر إخفاء/إظهار القائمة
-    document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
-    
-    // زر إغلاق القائمة (في الهواتف)
-    const closeSidebarBtn = document.getElementById('closeSidebar');
-    if (closeSidebarBtn) {
-        closeSidebarBtn.addEventListener('click', toggleSidebar);
-    }
-    
-    // القائمة الجانبية
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const tab = this.getAttribute('data-tab');
-            switchTab(tab);
-            
-            // إغلاق القائمة على الهواتف
-            if (window.innerWidth <= 1200) {
-                toggleSidebar();
-            }
-        });
-    });
-    
-    // تبديل الوضع المظلم
-    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-    
-    // زر الإشعارات
-    document.getElementById('notificationsBtn').addEventListener('click', showNotifications);
-    
-    // نموذج الإضافة
-    document.getElementById('addForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveItem();
-    });
-    
-    // معاينة الصور
-    document.getElementById('image1').addEventListener('change', function(e) {
-        previewImage(e.target, 'preview1');
-    });
-    
-    document.getElementById('image2').addEventListener('change', function(e) {
-        previewImage(e.target, 'preview2');
-    });
-    
-    // إغلاق القائمة عند النقر خارجها (للهواتف)
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
-    if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', toggleSidebar);
-    }
-    
-    // أحداث النوافذ المنبثقة
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('modal')) {
-            closeModal(e.target.id);
-        }
-    });
-    
-    console.log('✅ تم إعداد المستمعين للأحداث');
+/* ===== RESET & BASE STYLES ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-// إعداد القائمة الجانبية
-function setupSidebar() {
-    // تحميل حالة القائمة من localStorage
-    const savedState = localStorage.getItem('portfolioSidebarState');
-    if (savedState === 'hidden') {
-        sidebarVisible = false;
-        hideSidebar();
-    } else {
-        sidebarVisible = true;
-        showSidebar();
-    }
-    
-    // إخفاء زر الإغلاق على الشاشات الكبيرة
-    if (window.innerWidth > 1200) {
-        const closeBtn = document.getElementById('closeSidebar');
-        if (closeBtn) closeBtn.style.display = 'none';
-    }
+body {
+    font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
 }
 
-// إظهار/إخفاء القائمة الجانبية
-function toggleSidebar() {
-    if (sidebarVisible) {
-        hideSidebar();
-    } else {
-        showSidebar();
+/* ===== LOADER ===== */
+.loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.3s ease;
+}
+
+.loader-content {
+    text-align: center;
+    color: white;
+}
+
+.logo-circle {
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 40px;
+    animation: pulse 2s infinite;
+}
+
+.loader-content h3 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.loader-content p {
+    opacity: 0.8;
+}
+
+.loader-bar {
+    width: 300px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 30px auto 0;
+    overflow: hidden;
+}
+
+.progress {
+    width: 30%;
+    height: 100%;
+    background: white;
+    border-radius: 2px;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+}
+
+/* ===== APP CONTAINER ===== */
+.app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+.main-header {
+    background: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo i {
+    font-size: 28px;
+    color: #667eea;
+}
+
+.logo h1 {
+    font-size: 22px;
+    color: #333;
+    margin: 0;
+}
+
+.header-info {
+    display: flex;
+    gap: 25px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+.info-item i {
+    color: #667eea;
+}
+
+.header-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.header-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.header-btn:hover {
+    background: #f5f7fa;
+    transform: translateY(-2px);
+}
+
+.header-btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.header-btn.primary:hover {
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ===== STATS BAR ===== */
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding: 20px 30px;
+    background: #f8f9fa;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.stat i {
+    font-size: 24px;
+    color: #667eea;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat h3 {
+    font-size: 24px;
+    color: #333;
+    margin: 0 0 5px 0;
+}
+
+.stat p {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
+}
+
+/* ===== MAIN LAYOUT ===== */
+.main-layout {
+    display: flex;
+    flex: 1;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: 250px;
+    background: white;
+    border-left: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 170px);
+    position: sticky;
+    top: 170px;
+}
+
+.sidebar-menu {
+    flex: 1;
+    padding: 20px 0;
+    overflow-y: auto;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 25px;
+    color: #666;
+    text-decoration: none;
+    border-right: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.menu-item:hover {
+    background: #f8f9fa;
+    color: #667eea;
+}
+
+.menu-item.active {
+    background: linear-gradient(90deg, #667eea11 0%, #764ba211 100%);
+    color: #667eea;
+    border-right-color: #667eea;
+}
+
+.menu-item i {
+    width: 20px;
+    text-align: center;
+}
+
+.menu-divider {
+    padding: 15px 25px;
+    color: #999;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.status-dot.connected {
+    background: #2ecc71;
+    box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 12px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    background: #ff6b6b;
+    color: white;
+    border-color: #ff6b6b;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    height: calc(100vh - 170px);
+}
+
+.content-section {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.content-section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ===== SECTION HEADER ===== */
+.section-header {
+    margin-bottom: 30px;
+}
+
+.section-header h2 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.section-header h2 i {
+    color: #667eea;
+}
+
+.section-header p {
+    color: #666;
+    font-size: 16px;
+}
+
+.view-all {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* ===== QUICK ACTIONS ===== */
+.quick-actions {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+.quick-actions h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.action-btn {
+    padding: 20px;
+    background: #f8f9fa;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.action-btn i {
+    font-size: 28px;
+}
+
+/* ===== ITEMS GRID ===== */
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.items-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+/* ===== ITEM CARD ===== */
+.item-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+}
+
+.item-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.item-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-title {
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+}
+
+.item-date {
+    font-size: 12px;
+    color: #999;
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: white;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.btn-icon:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.item-body {
+    padding: 20px;
+}
+
+.item-description {
+    color: #666;
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+
+.item-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.item-image {
+    aspect-ratio: 16/9;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f8f9fa;
+    cursor: pointer;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.item-image:hover img {
+    transform: scale(1.05);
+}
+
+.item-image.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    font-size: 32px;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+    padding: 12px 25px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn.secondary {
+    background: #f8f9fa;
+    color: #666;
+    border: 1px solid #ddd;
+}
+
+.btn.secondary:hover {
+    background: #e9ecef;
+}
+
+/* ===== SECTION CONTROLS ===== */
+.section-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+/* ===== OPTIONS GRID ===== */
+.print-options,
+.backup-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.option-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eee;
+}
+
+.option-card i {
+    font-size: 48px;
+    color: #667eea;
+    margin-bottom: 20px;
+}
+
+.option-card h3 {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.option-card p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+/* ===== FORM STYLES ===== */
+.settings-form {
+    max-width: 600px;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #667eea;
+}
+
+input:checked + .slider:before {
+    transform: translateX(30px);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+/* ===== MODAL ===== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: modalIn 0.3s ease;
+}
+
+.modal-content.small {
+    max-width: 400px;
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
     }
-}
-
-// إظهار القائمة
-function showSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const mainContent = document.getElementById('mainContent');
-    
-    if (sidebar) sidebar.classList.remove('sidebar-hidden');
-    if (overlay) overlay.classList.remove('active');
-    
-    if (window.innerWidth > 1200 && mainContent) {
-        mainContent.style.marginLeft = '280px';
-    }
-    
-    sidebarVisible = true;
-    localStorage.setItem('portfolioSidebarState', 'visible');
-}
-
-// إخفاء القائمة
-function hideSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const mainContent = document.getElementById('mainContent');
-    
-    if (sidebar) sidebar.classList.add('sidebar-hidden');
-    if (overlay) overlay.classList.remove('active');
-    
-    if (window.innerWidth > 1200 && mainContent) {
-        mainContent.style.marginLeft = '0';
-    }
-    
-    sidebarVisible = false;
-    localStorage.setItem('portfolioSidebarState', 'hidden');
-}
-
-// تحديث واجهة القائمة للشاشات المختلفة
-window.addEventListener('resize', function() {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
-    const closeBtn = document.getElementById('closeSidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    
-    if (window.innerWidth <= 1200) {
-        // على الهواتف - إظهار زر الإغلاق
-        if (closeBtn) closeBtn.style.display = 'flex';
-        
-        if (sidebarVisible && sidebar) {
-            sidebar.classList.remove('sidebar-hidden');
-            if (overlay) overlay.classList.add('active');
-        }
-    } else {
-        // على الشاشات الكبيرة - إخفاء زر الإغلاق
-        if (closeBtn) closeBtn.style.display = 'none';
-        if (overlay) overlay.classList.remove('active');
-        
-        if (sidebarVisible && sidebar) {
-            sidebar.classList.remove('sidebar-hidden');
-            if (mainContent) mainContent.style.marginLeft = '280px';
-        } else if (sidebar) {
-            sidebar.classList.add('sidebar-hidden');
-            if (mainContent) mainContent.style.marginLeft = '0';
-        }
-    }
-});
-
-// تحميل البيانات
-function loadData() {
-    console.log('📥 جاري تحميل البيانات...');
-    
-    try {
-        const savedData = localStorage.getItem('teacherPortfolioData');
-        
-        if (savedData) {
-            portfolioData = JSON.parse(savedData);
-            console.log('✅ تم تحميل البيانات من التخزين المحلي');
-            
-            updateConnectionStatus('محلي', '#2ECC71');
-            updateDashboardStats();
-            updateRecentActivity();
-            renderSectionData('arabic');
-            
-            showToast('تم تحميل بياناتك المحفوظة', 'success');
-        } else {
-            console.log('📝 لا توجد بيانات سابقة، سيتم إنشاء ملف جديد');
-            updateConnectionStatus('جديد', '#F39C12');
-            showToast('تم إنشاء ملف جديد لك', 'info');
-            saveData();
-        }
-        
-    } catch (error) {
-        console.error('❌ خطأ في تحميل البيانات:', error);
-        updateConnectionStatus('خطأ', '#E74C3C');
-        showToast('خطأ في تحميل البيانات، سيتم إنشاء ملف جديد', 'error');
-    }
-}
-
-// حفظ البيانات
-function saveData() {
-    console.log('💾 جاري حفظ البيانات...');
-    
-    try {
-        const dataToSave = JSON.parse(JSON.stringify(portfolioData));
-        localStorage.setItem('teacherPortfolioData', JSON.stringify(dataToSave));
-        
-        console.log('✅ تم حفظ البيانات بنجاح');
-        updateConnectionStatus('محفوظ', '#2ECC71');
-        return true;
-        
-    } catch (error) {
-        console.error('❌ خطأ في حفظ البيانات:', error);
-        updateConnectionStatus('خطأ', '#E74C3C');
-        showToast('خطأ في حفظ البيانات', 'error');
-        return false;
-    }
-}
-
-// تحديث حالة الاتصال
-function updateConnectionStatus(status, color = '#2ECC71') {
-    const statusElement = document.getElementById('connectionStatus');
-    const statusIcon = document.getElementById('statusIcon');
-    
-    if (statusElement) {
-        statusElement.textContent = status;
-        statusElement.style.color = color;
-    }
-    
-    if (statusIcon) {
-        statusIcon.style.background = color;
-        statusIcon.style.boxShadow = `0 0 0 3px ${color}20`;
-    }
-}
-
-// تبديل بين الأقسام
-function switchTab(tabId) {
-    console.log(`🔄 التبديل إلى: ${tabId}`);
-    
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.getAttribute('data-tab') === tabId) {
-            item.classList.add('active');
-        }
-    });
-    
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    
-    const targetTab = document.getElementById(tabId);
-    if (targetTab) {
-        targetTab.classList.add('active');
-        currentTab = tabId;
-        
-        if (tabId !== 'dashboard') {
-            renderSectionData(tabId);
-        }
-        
-        closeAllModals();
-    }
-}
-
-// إغلاق جميع النوافذ المنبثقة
-function closeAllModals() {
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.style.display = 'none';
-    });
-}
-
-// تحديث إحصائيات الشاشة الرئيسية
-function updateDashboardStats() {
-    console.log('📊 تحديث الشاشة الرئيسية...');
-    
-    try {
-        // حساب إجمالي العناصر
-        let totalItems = 0;
-        let totalImages = 0;
-        
-        Object.values(portfolioData).forEach(items => {
-            totalItems += items.length;
-            items.forEach(item => {
-                if (item.images && Array.isArray(item.images)) {
-                    totalImages += item.images.length;
-                }
-            });
-        });
-        
-        // حساب العناصر لهذا الشهر
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
-        let thisMonthCount = 0;
-        
-        Object.values(portfolioData).forEach(items => {
-            items.forEach(item => {
-                const itemDate = new Date(item.timestamp || Date.now());
-                if (itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear) {
-                    thisMonthCount++;
-                }
-            });
-        });
-        
-        // حساب نسبة الإنجاز
-        const completionRate = Math.min(100, Math.floor((totalItems / 100) * 100));
-        
-        // تحديث العناصر في الصفحة
-        const totalItemsEl = document.getElementById('totalItems');
-        const totalImagesEl = document.getElementById('totalImages');
-        const thisMonthEl = document.getElementById('thisMonth');
-        const completionRateEl = document.getElementById('completionRate');
-        
-        if (totalItemsEl) totalItemsEl.textContent = totalItems;
-        if (totalImagesEl) totalImagesEl.textContent = totalImages;
-        if (thisMonthEl) thisMonthEl.textContent = thisMonthCount;
-        if (completionRateEl) completionRateEl.textContent = `${completionRate}%`;
-        
-    } catch (error) {
-        console.error('❌ خطأ في تحديث الإحصائيات:', error);
-    }
-}
-
-// تحديث النشاطات الحديثة
-function updateRecentActivity() {
-    const container = document.getElementById('recentActivity');
-    if (!container) return;
-    
-    try {
-        // جمع جميع العناصر
-        let allItems = [];
-        Object.keys(portfolioData).forEach(subject => {
-            portfolioData[subject].forEach(item => {
-                allItems.push({
-                    ...item,
-                    subject: subject
-                });
-            });
-        });
-        
-        // ترتيب حسب التاريخ (الأحدث أولاً)
-        allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        
-        // أخذ 5 عناصر فقط
-        const recentItems = allItems.slice(0, 5);
-        
-        // تفريغ الحاوية
-        container.innerHTML = '';
-        
-        if (recentItems.length === 0) {
-            container.innerHTML = `
-                <div class="empty-activity">
-                    <i class="fas fa-history"></i>
-                    <p>لا توجد نشاطات حديثة</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // إضافة العناصر
-        recentItems.forEach(item => {
-            const activityItem = document.createElement('div');
-            activityItem.className = 'activity-item';
-            
-            const icon = getSubjectIcon(item.subject);
-            const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
-            const time = formatTimeAgo(item.timestamp);
-            
-            activityItem.innerHTML = `
-                <div class="activity-icon">
-                    <i class="${icon}"></i>
-                </div>
-                <div class="activity-content">
-                    <h4>${title}</h4>
-                    <p>${getSubjectName(item.subject)}</p>
-                </div>
-                <div class="activity-time">${time}</div>
-            `;
-            
-            activityItem.addEventListener('click', () => {
-                switchTab(item.subject);
-            });
-            
-            container.appendChild(activityItem);
-        });
-        
-    } catch (error) {
-        console.error('❌ خطأ في تحديث النشاطات:', error);
-        container.innerHTML = `
-            <div class="empty-activity">
-                <i class="fas fa-exclamation-circle"></i>
-                <p>خطأ في تحميل النشاطات</p>
-            </div>
-        `;
-    }
-}
-
-// الحصول على أيقونة المادة
-function getSubjectIcon(subject) {
-    const icons = {
-        arabic: 'fas fa-book',
-        english: 'fas fa-language',
-        quran: 'fas fa-book-quran',
-        math: 'fas fa-calculator',
-        science: 'fas fa-flask',
-        activities: 'fas fa-chalkboard-teacher'
-    };
-    return icons[subject] || 'fas fa-file';
-}
-
-// الحصول على اسم المادة
-function getSubjectName(subject) {
-    const names = {
-        arabic: 'اللغة العربية',
-        english: 'اللغة الإنجليزية',
-        quran: 'القرآن الكريم',
-        math: 'الرياضيات',
-        science: 'العلوم',
-        activities: 'النشاطات'
-    };
-    return names[subject] || subject;
-}
-
-// تنسيق الوقت المنقضي
-function formatTimeAgo(timestamp) {
-    if (!timestamp) return 'قريباً';
-    
-    const now = Date.now();
-    const diff = now - timestamp;
-    
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (minutes < 1) return 'الآن';
-    if (minutes < 60) return `قبل ${minutes} دقيقة`;
-    if (hours < 24) return `قبل ${hours} ساعة`;
-    if (days < 7) return `قبل ${days} يوم`;
-    
-    return new Date(timestamp).toLocaleDateString('ar-SA');
-}
-
-// إعداد الوضع المظلم/فاتح
-function setupTheme() {
-    const savedTheme = localStorage.getItem('portfolioTheme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    
-    const themeBtn = document.getElementById('themeToggle');
-    if (themeBtn) {
-        themeBtn.innerHTML = savedTheme === 'dark' ? 
-            '<i class="fas fa-sun"></i>' : 
-            '<i class="fas fa-moon"></i>';
-    }
-}
-
-// تبديل الوضع المظلم/فاتح
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('portfolioTheme', newTheme);
-    
-    const themeBtn = document.getElementById('themeToggle');
-    if (themeBtn) {
-        themeBtn.innerHTML = newTheme === 'dark' ? 
-            '<i class="fas fa-sun"></i>' : 
-            '<i class="fas fa-moon"></i>';
-    }
-    
-    showToast(`تم تفعيل الوضع ${newTheme === 'dark' ? 'الداكن' : 'الفاتح'}`, 'info');
-}
-
-// عرض نموذج الإضافة
-function showAddModal(subject) {
-    console.log(`➕ فتح نموذج الإضافة لـ: ${subject}`);
-    
-    // تعيين العنوان المناسب
-    const titles = {
-        arabic: 'إضافة حرف عربي',
-        english: 'إضافة كلمة إنجليزية',
-        quran: 'إضافة سورة قرآنية',
-        math: 'إضافة مفهوم رياضي',
-        science: 'إضافة تجربة علمية',
-        activities: 'إضافة نشاط مدرسي'
-    };
-    
-    document.getElementById('modalTitle').textContent = titles[subject] || 'إضافة جديد';
-    document.getElementById('modalSubject').value = subject;
-    
-    // مسح النموذج
-    document.getElementById('addForm').reset();
-    document.getElementById('preview1').innerHTML = '';
-    document.getElementById('preview2').innerHTML = '';
-    
-    // إظهار النافذة
-    document.getElementById('addModal').style.display = 'flex';
-}
-
-// إغلاق النافذة المنبثقة
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// معاينة الصورة
-function previewImage(input, previewId) {
-    const file = input.files[0];
-    if (!file) return;
-    
-    // التحقق من حجم الصورة (5MB كحد أقصى)
-    if (file.size > 5 * 1024 * 1024) {
-        showToast('حجم الصورة كبير جداً (الحد الأقصى 5MB)', 'error');
-        input.value = '';
-        return;
-    }
-    
-    // التحقق من نوع الصورة
-    if (!file.type.match('image.*')) {
-        showToast('الرجاء اختيار ملف صورة فقط', 'error');
-        input.value = '';
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const preview = document.getElementById(previewId);
-        if (preview) {
-            preview.innerHTML = `<img src="${e.target.result}" alt="معاينة الصورة">`;
-        }
-    };
-    reader.readAsDataURL(file);
-}
-
-// حفظ العنصر
-async function saveItem() {
-    console.log('💾 جاري حفظ العنصر...');
-    
-    const subject = document.getElementById('modalSubject').value;
-    const title = document.getElementById('itemTitle').value.trim();
-    const description = document.getElementById('itemDescription').value.trim();
-    
-    // التحقق من المدخلات
-    if (!title) {
-        showToast('الرجاء إدخال العنوان', 'error');
-        return;
-    }
-    
-    try {
-        showToast('جارٍ حفظ العنصر...', 'info');
-        
-        // إنشاء كائن العنصر
-        const item = {
-            id: Date.now().toString(),
-            timestamp: Date.now(),
-            date: new Date().toLocaleDateString('ar-SA'),
-            title: title,
-            description: description
-        };
-        
-        // إضافة حقول خاصة بناءً على المادة
-        switch(subject) {
-            case 'arabic':
-                item.letter = title;
-                break;
-            case 'english':
-                item.letter = title;
-                break;
-            case 'quran':
-                item.surah = title;
-                break;
-            case 'math':
-            case 'science':
-                item.concept = title;
-                break;
-        }
-        
-        // معالجة الصور
-        const image1 = document.getElementById('image1').files[0];
-        const image2 = document.getElementById('image2').files[0];
-        
-        item.images = [];
-        
-        if (image1) {
-            const imageData = await compressImage(image1);
-            if (imageData) item.images.push(imageData);
-        }
-        
-        if (image2) {
-            const imageData = await compressImage(image2);
-            if (imageData) item.images.push(imageData);
-        }
-        
-        // إضافة إلى البيانات
-        if (!portfolioData[subject]) {
-            portfolioData[subject] = [];
-        }
-        
-        portfolioData[subject].push(item);
-        
-        // حفظ البيانات
-        const saved = saveData();
-        
-        if (saved) {
-            // تحديث واجهة المستخدم
-            updateDashboardStats();
-            updateRecentActivity();
-            renderSectionData(subject);
-            
-            // إغلاق النافذة
-            closeModal('addModal');
-            
-            showToast('تم إضافة العنصر بنجاح', 'success');
-        }
-        
-    } catch (error) {
-        console.error('❌ خطأ في حفظ العنصر:', error);
-        showToast('خطأ في حفظ العنصر', 'error');
-    }
-}
-
-// ضغط الصورة
-function compressImage(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const img = new Image();
-            img.src = e.target.result;
-            
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // تحديد الأبعاد القصوى
-                const maxWidth = 1200;
-                const maxHeight = 800;
-                
-                let width = img.width;
-                let height = img.height;
-                
-                // تغيير الحجم مع الحفاظ على التناسب
-                if (width > height) {
-                    if (width > maxWidth) {
-                        height *= maxWidth / width;
-                        width = maxWidth;
-                    }
-                } else {
-                    if (height > maxHeight) {
-                        width *= maxHeight / height;
-                        height = maxHeight;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                // تحويل إلى base64
-                const compressedData = canvas.toDataURL('image/jpeg', 0.7);
-                resolve(compressedData);
-            };
-        };
-        
-        reader.readAsDataURL(file);
-    });
-}
-
-// عرض بيانات القسم
-function renderSectionData(subject) {
-    const container = document.getElementById(`${subject}Items`);
-    if (!container) return;
-    
-    const items = portfolioData[subject] || [];
-    
-    // تفريغ الحاوية
-    container.innerHTML = '';
-    
-    if (items.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="${getSubjectIcon(subject)}"></i>
-                <h3>لا توجد عناصر</h3>
-                <p>لم يتم إضافة أي عناصر إلى هذا القسم بعد</p>
-                <button class="btn-primary mt-20" onclick="showAddModal('${subject}')">
-                    <i class="fas fa-plus"></i>
-                    إضافة أول عنصر
-                </button>
-            </div>
-        `;
-        return;
-    }
-    
-    // ترتيب العناصر من الأحدث إلى الأقدم
-    items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    
-    // إضافة العناصر
-    items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'item-card';
-        
-        const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
-        const date = item.date || new Date(item.timestamp).toLocaleDateString('ar-SA');
-        
-        card.innerHTML = `
-            <div class="item-header">
-                <div>
-                    <div class="item-title">${title}</div>
-                    <div class="item-date">${date}</div>
-                </div>
-                <div class="item-actions">
-                    <button class="btn-icon" onclick="viewItem('${subject}', '${item.id}')">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn-icon" onclick="deleteItem('${subject}', '${item.id}')">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="item-body">
-                <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
-                <div class="item-images">
-                    <div class="item-image" onclick="viewImage('${item.images?.[0] || ''}')">
-                        ${item.images && item.images[0] ? 
-                            `<img src="${item.images[0]}" alt="الصورة الأولى">` : 
-                            '<div class="item-image empty"><i class="fas fa-image"></i></div>'
-                        }
-                    </div>
-                    <div class="item-image" onclick="viewImage('${item.images?.[1] || ''}')">
-                        ${item.images && item.images[1] ? 
-                            `<img src="${item.images[1]}" alt="الصورة الثانية">` : 
-                            '<div class="item-image empty"><i class="fas fa-image"></i></div>'
-                        }
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        container.appendChild(card);
-    });
-}
-
-// عرض العنصر
-function viewItem(subject, itemId) {
-    const items = portfolioData[subject] || [];
-    const item = items.find(i => i.id === itemId);
-    
-    if (!item) {
-        showToast('العنصر غير موجود', 'error');
-        return;
-    }
-    
-    const title = item.letter || item.surah || item.concept || item.title || 'عنصر';
-    
-    // إنشاء نافذة عرض
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.display = 'flex';
-    modal.innerHTML = `
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h3>${title}</h3>
-                <button class="close-btn" onclick="this.parentElement.parentElement.remove()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p><strong>الوصف:</strong> ${item.description || 'لا يوجد وصف'}</p>
-                <p><strong>التاريخ:</strong> ${item.date}</p>
-                <div class="item-images" style="margin-top: 20px;">
-                    ${item.images && item.images[0] ? 
-                        `<img src="${item.images[0]}" style="max-width: 100%; margin-bottom: 10px;" alt="الصورة الأولى">` : 
-                        ''
-                    }
-                    ${item.images && item.images[1] ? 
-                        `<img src="${item.images[1]}" style="max-width: 100%;" alt="الصورة الثانية">` : 
-                        ''
-                    }
-                </div>
-            </div>
-        </div>
-    `;
-    
-    modal.onclick = function(e) {
-        if (e.target === this) {
-            this.remove();
-        }
-    };
-    
-    document.body.appendChild(modal);
-}
-
-// حذف العنصر
-function deleteItem(subject, itemId) {
-    if (!confirm('هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذه العملية.')) {
-        return;
-    }
-    
-    try {
-        showToast('جارٍ حذف العنصر...', 'info');
-        
-        // البحث عن العنصر وحذفه
-        portfolioData[subject] = portfolioData[subject].filter(item => item.id !== itemId);
-        
-        // حفظ البيانات
-        const saved = saveData();
-        
-        if (saved) {
-            // تحديث واجهة المستخدم
-            updateDashboardStats();
-            updateRecentActivity();
-            renderSectionData(subject);
-            
-            showToast('تم حذف العنصر بنجاح', 'success');
-        }
-        
-    } catch (error) {
-        console.error('❌ خطأ في حذف العنصر:', error);
-        showToast('خطأ في حذف العنصر', 'error');
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-// عرض الصورة
-function viewImage(imageUrl) {
-    if (!imageUrl) return;
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.display = 'flex';
-    modal.innerHTML = `
-        <div style="position: relative; max-width: 90vw; max-height: 90vh;">
-            <img src="${imageUrl}" style="max-width: 100%; max-height: 90vh; object-fit: contain;" alt="صورة">
-            <button style="position: absolute; top: 10px; right: 10px; background: #E74C3C; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer;" 
-                    onclick="this.parentElement.parentElement.remove()">&times;</button>
-        </div>
-    `;
-    
-    modal.onclick = function(e) {
-        if (e.target === this) {
-            this.remove();
-        }
-    };
-    
-    document.body.appendChild(modal);
+.modal-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-// عرض الإشعارات
-function showNotifications() {
-    showToast('لا توجد إشعارات جديدة', 'info');
+.modal-header h3 {
+    font-size: 20px;
+    color: #333;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-// تسجيل الخروج
-function logout() {
-    if (confirm('هل تريد تسجيل الخروج؟')) {
-        showToast('شكراً لاستخدامك ملف الإنجاز', 'success');
-        // في تطبيق حقيقي، هنا نوجه المستخدم لصفحة الخروج
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+    background: #f8f9fa;
+    color: #333;
+}
+
+.modal-body {
+    padding: 30px;
+    max-height: calc(90vh - 100px);
+    overflow-y: auto;
+}
+
+/* ===== FORM IN MODAL ===== */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.file-upload {
+    position: relative;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    background: #f8f9fa;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-label:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.image-preview {
+    margin-top: 15px;
+    min-height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+}
+
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast-container {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background: white;
+    border-radius: 10px;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    animation: toastIn 0.3s ease;
+    border-right: 4px solid;
+    min-width: 300px;
+    max-width: 400px;
+}
+
+@keyframes toastIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
     }
 }
 
-// عرض نافذة الطباعة
-function showPrintModal() {
-    document.getElementById('printModal').style.display = 'flex';
+.toast.success {
+    border-color: #2ecc71;
 }
 
-// طباعة المستند
-function printDocument() {
-    const option = document.querySelector('input[name="printOption"]:checked').value;
-    
-    // إنشاء محتوى الطباعة
-    let printContent = '';
-    
-    if (option === 'current') {
-        const currentTabContent = document.getElementById(currentTab);
-        if (currentTabContent) {
-            printContent = currentTabContent.outerHTML;
-        }
-    } else {
-        const appContainer = document.querySelector('.app-container');
-        if (appContainer) {
-            printContent = appContainer.outerHTML;
-        }
+.toast.error {
+    border-color: #e74c3c;
+}
+
+.toast.info {
+    border-color: #3498db;
+}
+
+.toast.warning {
+    border-color: #f39c12;
+}
+
+.toast i {
+    font-size: 20px;
+}
+
+.toast.success i { color: #2ecc71; }
+.toast.error i { color: #e74c3c; }
+.toast.info i { color: #3498db; }
+.toast.warning i { color: #f39c12; }
+
+.toast-content {
+    flex: 1;
+}
+
+.toast-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.toast-message {
+    color: #666;
+    font-size: 14px;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: 60px 30px;
+    background: #f8f9fa;
+    border-radius: 15px;
+    border: 2px dashed #ddd;
+    grid-column: 1 / -1;
+}
+
+.empty-state i {
+    font-size: 64px;
+    color: #667eea;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #666;
+    max-width: 400px;
+    margin: 0 auto 20px;
+}
+
+/* ===== RECENT ITEMS ===== */
+.recent-items {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1200px) {
+    .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
     }
     
-    // إنشاء نافذة طباعة
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <html dir="rtl">
-        <head>
-            <title>طباعة ملف الإنجاز - المعلمة فريال الغماري</title>
-            <style>
-                body {
-                    font-family: 'Cairo', sans-serif;
-                    padding: 20px;
-                    background: white;
-                    color: black;
-                    direction: rtl;
-                }
-                .no-print { display: none; }
-                img { max-width: 100%; height: auto; }
-                @media print {
-                    .no-print { display: none !important; }
-                }
-            </style>
-        </head>
-        <body>
-            <h1 style="text-align: center; margin-bottom: 30px;">
-                ملف إنجاز المعلمة فريال عبدالله الغماري
-            </h1>
-            ${printContent}
-            <div class="no-print" style="margin-top: 50px; text-align: center;">
-                <button onclick="window.print()" style="padding: 12px 24px; margin: 10px; background: #3498DB; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                    طباعة
-                </button>
-                <button onclick="window.close()" style="padding: 12px 24px; margin: 10px; background: #95A5A6; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                    إغلاق
-                </button>
-            </div>
-            <script>
-                window.onload = function() {
-                    window.print();
-                }
-            <\/script>
-        </body>
-        </html>
-    `);
-    
-    printWindow.document.close();
-    
-    closeModal('printModal');
-    showToast('جاري تحضير الطباعة...', 'info');
-}
-
-// تصدير PDF (وظيفة وهمية)
-function exportToPDF() {
-    showToast('جاري تحضير ملف PDF...', 'info');
-    
-    // محاكاة عملية التصدير
-    setTimeout(() => {
-        showToast('تم إنشاء ملف PDF بنجاح', 'success');
-        
-        // إنشاء رابط تنزيل وهمي
-        const link = document.createElement('a');
-        link.href = '#';
-        link.download = 'ملف-الإنجاز.pdf';
-        link.click();
-    }, 1500);
-}
-
-// نسخة احتياطية
-function backupData() {
-    try {
-        const dataStr = JSON.stringify(portfolioData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const dataUrl = URL.createObjectURL(dataBlob);
-        
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = `ملف-الإنجاز-نسخة-احتياطية-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        URL.revokeObjectURL(dataUrl);
-        
-        showToast('تم إنشاء نسخة احتياطية بنجاح', 'success');
-        
-    } catch (error) {
-        console.error('❌ خطأ في إنشاء النسخة الاحتياطية:', error);
-        showToast('خطأ في إنشاء النسخة الاحتياطية', 'error');
+    .sidebar {
+        width: 220px;
     }
 }
 
-// تصدير القسم
-function exportSection(subject) {
-    try {
-        const sectionData = portfolioData[subject] || [];
-        const dataStr = JSON.stringify(sectionData, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const dataUrl = URL.createObjectURL(dataBlob);
-        
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = `${getSubjectName(subject)}-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        URL.revokeObjectURL(dataUrl);
-        
-        showToast(`تم تصدير ${getSubjectName(subject)} بنجاح`, 'success');
-        
-    } catch (error) {
-        console.error('❌ خطأ في تصدير القسم:', error);
-        showToast('خطأ في تصدير القسم', 'error');
+@media (max-width: 992px) {
+    .main-layout {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        border-left: none;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .sidebar-menu {
+        display: flex;
+        overflow-x: auto;
+        padding: 15px;
+    }
+    
+    .menu-item {
+        white-space: nowrap;
+        border-right: none;
+        border-bottom: 3px solid transparent;
+    }
+    
+    .menu-item.active {
+        border-right-color: transparent;
+        border-bottom-color: #667eea;
+    }
+    
+    .menu-divider {
+        display: none;
+    }
+    
+    .main-content {
+        height: auto;
     }
 }
 
-// عرض إشعار
-function showToast(message, type = 'info') {
-    // تنظيف الإشعارات القديمة
-    activeToasts = activeToasts.filter(toast => {
-        if (toast.expiry < Date.now()) {
-            if (toast.element && toast.element.parentNode) {
-                toast.element.remove();
-            }
-            return false;
-        }
-        return true;
-    });
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
     
-    // إنشاء عنصر الإشعار
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
+    .logo-section {
+        flex-direction: column;
+        gap: 15px;
+    }
     
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    .header-info {
+        flex-direction: column;
+        gap: 10px;
+    }
     
-    const icons = {
-        success: 'fas fa-check-circle',
-        error: 'fas fa-exclamation-circle',
-        info: 'fas fa-info-circle',
-        warning: 'fas fa-exclamation-triangle'
-    };
+    .stats-bar {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
     
-    toast.innerHTML = `
-        <i class="${icons[type] || 'fas fa-info-circle'}"></i>
-        <div class="toast-content">
-            <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
+    .main-content {
+        padding: 20px;
+    }
     
-    container.appendChild(toast);
+    .form-row {
+        grid-template-columns: 1fr;
+    }
     
-    // إضافة للقائمة النشطة
-    const toastData = {
-        element: toast,
-        expiry: Date.now() + 4000 // 4 ثواني
-    };
+    .items-container {
+        grid-template-columns: 1fr;
+    }
     
-    activeToasts.push(toastData);
-    
-    // إزالة تلقائية بعد 4 ثواني
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-        activeToasts = activeToasts.filter(t => t !== toastData);
-    }, 4000);
+    .print-options,
+    .backup-options {
+        grid-template-columns: 1fr;
+    }
 }
 
-// تصفية دورية للإشعارات
-setInterval(() => {
-    activeToasts = activeToasts.filter(toast => {
-        if (toast.expiry < Date.now()) {
-            if (toast.element && toast.element.parentNode) {
-                toast.element.remove();
-            }
-            return false;
-        }
-        return true;
-    });
-}, 1000);
+@media (max-width: 480px) {
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-controls {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .modal-content {
+        margin: 10px;
+    }
+    
+    .toast {
+        min-width: 250px;
+        max-width: 300px;
+    }
+}
 
-// جعل الدوال متاحة عالمياً
-window.switchTab = switchTab;
-window.showAddModal = showAddModal;
-window.closeModal = closeModal;
-window.saveItem = saveItem;
-window.viewItem = viewItem;
-window.deleteItem = deleteItem;
-window.viewImage = viewImage;
-window.showPrintModal = showPrintModal;
-window.printDocument = printDocument;
-window.exportToPDF = exportToPDF;
-window.backupData = backupData;
-window.toggleTheme = toggleTheme;
-window.showNotifications = showNotifications;
-window.logout = logout;
-window.exportSection = exportSection;
-window.toggleSidebar = toggleSidebar;
-
-console.log('🎉 النظام جاهز! جميع الميزات تعمل بشكل صحيح.');
+/* ===== UTILITY CLASSES ===== */
+.mt-20 { margin-top: 20px; }
+.mt-30 { margin-top: 30px; }
+.mb-20 { margin-bottom: 20px; }
+.mb-30 { margin-bottom: 30px; }
+.text-center { text-align: center; }
+.hidden { display: none !important; }

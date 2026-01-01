@@ -160,7 +160,47 @@
                     <span>الإعدادات</span>
                 </a>
             </div>
-            
+                                        <div class="setting-card">
+    <h3><i class="fas fa-trash-alt"></i> حذف البيانات</h3>
+    <div class="setting-content">
+        <p class="text-muted mb-20">احذر: هذه العمليات لا يمكن التراجع عنها</p>
+        
+        <button class="btn-danger" onclick="deleteAllItems('arabic')">
+            <i class="fas fa-trash"></i>
+            حذف كل عناصر العربية
+        </button>
+        
+        <button class="btn-danger mt-10" onclick="deleteAllItems('english')">
+            <i class="fas fa-trash"></i>
+            حذف كل عناصر الإنجليزية
+        </button>
+        
+        <button class="btn-danger mt-10" onclick="deleteAllItems('quran')">
+            <i class="fas fa-trash"></i>
+            حذف كل السور القرآنية
+        </button>
+        
+        <button class="btn-danger mt-10" onclick="deleteAllItems('math')">
+            <i class="fas fa-trash"></i>
+            حذف كل مفاهيم الرياضيات
+        </button>
+        
+        <button class="btn-danger mt-10" onclick="deleteAllItems('science')">
+            <i class="fas fa-trash"></i>
+            حذف كل تجارب العلوم
+        </button>
+        
+        <button class="btn-danger mt-10" onclick="deleteAllItems('activities')">
+            <i class="fas fa-trash"></i>
+            حذف كل النشاطات
+        </button>
+        
+        <button class="btn-danger mt-20" onclick="clearAllData()">
+            <i class="fas fa-bomb"></i>
+            حذف كل البيانات
+        </button>
+    </div>
+</div>
             <div class="sidebar-footer">
                 <button class="btn-primary btn-block" onclick="showAddModal('quick')">
                     <i class="fas fa-plus-circle"></i>

@@ -796,27 +796,32 @@ function loadFullPortfolio() {
                 const title = item.letter || item.surah || item.concept || item.title || 'عنصر بدون عنوان';
                 const date = item.date || formatDate(new Date(item.timestamp));
                 
-                card.innerHTML = `
-                    <div class="item-header">
-                        <div>
-                            <div class="item-title">${title}</div>
-                            <div class="item-date">${date}</div>
-                        </div>
+               card.innerHTML = `
+    <div class="item-header">
+        <div>
+            <div class="item-title">${title}</div>
+            <div class="item-date">${date}</div>
+        </div>
+        <div class="item-actions">
+            <button class="btn-icon delete-btn" onclick="deleteItemFromFull('${subject}', '${item.id}')" 
+                    title="حذف العنصر">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="item-body">
+        <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
+        ${item.images && item.images.length > 0 ? `
+            <div class="item-images">
+                ${item.images.map((img, index) => `
+                    <div class="item-image" onclick="viewImage('${img}')">
+                        <img src="${img}" alt="الصورة ${index + 1}">
                     </div>
-                    <div class="item-body">
-                        <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
-                        ${item.images && item.images.length > 0 ? `
-                            <div class="item-images">
-                                ${item.images.map((img, index) => `
-                                    <div class="item-image" onclick="viewImage('${img}')">
-                                        <img src="${img}" alt="الصورة ${index + 1}">
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-                
+                `).join('')}
+            </div>
+        ` : ''}
+    </div>
+`;
                 itemsContainer.appendChild(card);
             });
         }
@@ -837,7 +842,11 @@ function loadFullPortfolio() {
         `;
     }
 }
-
+// دالة تعديل العنصر
+function editItem(subject, itemId) {
+    showToast('ميزة التعديل قيد التطوير', 'info');
+    // يمكنك إضافة وظيفة التعديل لاحقاً
+}
 // View Image
 function viewImage(imageUrl) {
     if (!imageUrl) {

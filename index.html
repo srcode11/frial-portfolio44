@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ملف إنجاز المعلمة فريال الغماري</title>
     
-    <!-- Font Awesome - رابط صحيح -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.css">
+    <!-- Font Awesome Local -->
+    <link rel="stylesheet" href="fontawesome/css/all.min.css">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -29,6 +29,12 @@
         @keyframes fadeIn {
             to { opacity: 1; }
         }
+        
+        /* أيقونات Font Awesome احتياطية */
+        .fa, .fas, .far, .fal, .fad, .fab {
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+        }
     </style>
 </head>
 <body>
@@ -37,7 +43,7 @@
         <div class="loader-content">
             <div class="loader-logo">
                 <div class="logo-circle">
-                    <i class="fas fa-graduation-cap"></i>
+                    <span class="loader-icon">📚</span>
                 </div>
                 <h3>ملف الإنجاز الرقمي</h3>
                 <p>المعلمة فريال الغماري</p>
@@ -53,40 +59,39 @@
         <!-- Top Navigation -->
         <nav class="top-nav">
             <div class="nav-left">
-                <button class="nav-btn menu-toggle" id="menuToggle">
-                    <i class="fas fa-bars"></i>
+                <button class="nav-btn menu-toggle" id="menuToggle" title="القائمة">
+                    <span class="nav-icon">☰</span>
                 </button>
                 <div class="logo">
-                    <i class="fas fa-book"></i>
+                    <span class="logo-icon">📁</span>
                     <span>ملف الإنجاز</span>
                 </div>
             </div>
             <div class="nav-center">
                 <div class="nav-info">
                     <div class="info-item">
-                        <i class="fas fa-user-graduate"></i>
+                        <span class="info-icon">👩‍🏫</span>
                         <span>المعلمة: فريال الغماري</span>
                     </div>
                     <div class="info-item">
-                        <i class="fas fa-school"></i>
+                        <span class="info-icon">🏫</span>
                         <span>ابتدائية النخبة</span>
                     </div>
                     <div class="info-item" id="connectionStatusItem">
-                        <i class="fas fa-wifi"></i>
-                        <span id="connectionStatus">محلي</span>
+                        <span class="info-icon">📶</span>
+                        <span id="connectionStatus">متصل</span>
                     </div>
                 </div>
             </div>
             <div class="nav-right">
                 <button class="nav-btn" id="themeToggle" title="تبديل الوضع">
-                    <i class="fas fa-moon"></i>
+                    <span class="theme-icon">🌙</span>
                 </button>
                 <button class="nav-btn" id="fullscreenBtn" title="ملء الشاشة">
-                    <i class="fas fa-expand"></i>
+                    <span class="fullscreen-icon">⛶</span>
                 </button>
                 <div class="user-profile">
-                    <img src="https://ui-avatars.com/api/?name=فريال+الغماري&background=4A6FA5&color=fff&size=128" 
-                         alt="المعلمة فريال">
+                    <div class="avatar-circle">ف</div>
                 </div>
             </div>
         </nav>
@@ -96,55 +101,55 @@
             <div class="sidebar-header">
                 <div class="sidebar-user">
                     <div class="user-avatar">
-                        <i class="fas fa-chalkboard-teacher"></i>
+                        <span class="avatar-icon">👩‍🏫</span>
                     </div>
                     <div class="user-info">
                         <h4>فريال الغماري</h4>
                         <p>معلمة الصفوف الأولية</p>
                     </div>
                 </div>
-                <button class="sidebar-close" id="sidebarClose">
-                    <i class="fas fa-times"></i>
+                <button class="sidebar-close" id="sidebarClose" title="إغلاق">
+                    <span class="close-icon">×</span>
                 </button>
             </div>
             
             <div class="sidebar-menu">
                 <a href="#" class="menu-item active" data-tab="dashboard">
-                    <i class="fas fa-home"></i>
+                    <span class="menu-icon">🏠</span>
                     <span>الرئيسية</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="fullPortfolio">
-                    <i class="fas fa-book-open"></i>
+                    <span class="menu-icon">📚</span>
                     <span>الملف الكامل</span>
                     <span class="menu-badge" id="fullPortfolioBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="arabic">
-                    <i class="fas fa-font"></i>
+                    <span class="menu-icon">🔤</span>
                     <span>اللغة العربية</span>
                     <span class="menu-badge" id="arabicBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="english">
-                    <i class="fas fa-language"></i>
+                    <span class="menu-icon">🔡</span>
                     <span>الإنجليزية</span>
                     <span class="menu-badge" id="englishBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="quran">
-                    <i class="fas fa-book-quran"></i>
+                    <span class="menu-icon">📖</span>
                     <span>القرآن الكريم</span>
                     <span class="menu-badge" id="quranBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="math">
-                    <i class="fas fa-calculator"></i>
+                    <span class="menu-icon">➕</span>
                     <span>الرياضيات</span>
                     <span class="menu-badge" id="mathBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="science">
-                    <i class="fas fa-flask"></i>
+                    <span class="menu-icon">🧪</span>
                     <span>العلوم</span>
                     <span class="menu-badge" id="scienceBadge">0</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="activities">
-                    <i class="fas fa-chalkboard"></i>
+                    <span class="menu-icon">🎯</span>
                     <span>النشاطات</span>
                     <span class="menu-badge" id="activitiesBadge">0</span>
                 </a>
@@ -152,26 +157,26 @@
                 <div class="menu-divider"></div>
                 
                 <a href="#" class="menu-item" data-tab="reports">
-                    <i class="fas fa-chart-bar"></i>
+                    <span class="menu-icon">📊</span>
                     <span>التقارير</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="settings">
-                    <i class="fas fa-cogs"></i>
+                    <span class="menu-icon">⚙️</span>
                     <span>الإعدادات</span>
                 </a>
             </div>
             
             <div class="sidebar-footer">
                 <button class="btn-primary btn-block" onclick="showAddModal('quick')">
-                    <i class="fas fa-plus-circle"></i>
+                    <span class="btn-icon">➕</span>
                     إضافة سريعة
                 </button>
                 <button class="btn-secondary btn-block mt-10" onclick="showPrintModal()">
-                    <i class="fas fa-print"></i>
+                    <span class="btn-icon">🖨️</span>
                     طباعة الملف
                 </button>
                 <button class="btn-success btn-block mt-10" onclick="backupData()">
-                    <i class="fas fa-download"></i>
+                    <span class="btn-icon">💾</span>
                     نسخة احتياطية
                 </button>
             </div>
@@ -182,7 +187,7 @@
             <!-- Dashboard -->
             <section id="dashboard" class="tab-content active">
                 <div class="content-header">
-                    <h1><i class="fas fa-home"></i> مرحباً بعودتك، المعلمة فريال 👋</h1>
+                    <h1><span class="header-icon">👋</span> مرحباً بعودتك، المعلمة فريال</h1>
                     <p>هذا هو ملف إنجازك الرقمي المتكامل، يمكنك إدارة جميع أعمالك وأنشطتك التعليمية من هنا</p>
                 </div>
                 
@@ -190,7 +195,7 @@
                 <div class="quick-stats">
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="fas fa-layer-group"></i>
+                            <span>📦</span>
                         </div>
                         <div class="stat-info">
                             <h3 id="totalItems">0</h3>
@@ -199,7 +204,7 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="fas fa-images"></i>
+                            <span>🖼️</span>
                         </div>
                         <div class="stat-info">
                             <h3 id="totalImages">0</h3>
@@ -208,7 +213,7 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="fas fa-calendar-alt"></i>
+                            <span>📅</span>
                         </div>
                         <div class="stat-info">
                             <h3 id="thisMonth">0</h3>
@@ -217,7 +222,7 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-icon">
-                            <i class="fas fa-chart-line"></i>
+                            <span>📈</span>
                         </div>
                         <div class="stat-info">
                             <h3 id="completionRate">0%</h3>
@@ -229,48 +234,48 @@
                 <!-- Quick Actions -->
                 <div class="section-card">
                     <h2 class="section-title">
-                        <i class="fas fa-bolt"></i>
+                        <span class="section-icon">⚡</span>
                         إجراءات سريعة
                     </h2>
                     <div class="quick-actions-grid">
                         <button class="action-card" onclick="switchTab('fullPortfolio')">
                             <div class="action-icon">
-                                <i class="fas fa-book-open"></i>
+                                <span>📚</span>
                             </div>
                             <h4>الملف الكامل</h4>
                             <p>عرض جميع العناصر مع الصور</p>
                         </button>
                         <button class="action-card" onclick="showAddModal('arabic')">
                             <div class="action-icon">
-                                <i class="fas fa-font"></i>
+                                <span>🔤</span>
                             </div>
                             <h4>حرف عربي</h4>
                             <p>إضافة نشاط لحرف جديد</p>
                         </button>
                         <button class="action-card" onclick="showAddModal('english')">
                             <div class="action-icon">
-                                <i class="fas fa-language"></i>
+                                <span>🔡</span>
                             </div>
                             <h4>كلمة إنجليزية</h4>
                             <p>إضافة نشاط لكلمة جديدة</p>
                         </button>
                         <button class="action-card" onclick="showAddModal('quran')">
                             <div class="action-icon">
-                                <i class="fas fa-book-quran"></i>
+                                <span>📖</span>
                             </div>
                             <h4>سورة قرآنية</h4>
                             <p>إضافة نشاط لسورة جديدة</p>
                         </button>
                         <button class="action-card" onclick="showAddModal('math')">
                             <div class="action-icon">
-                                <i class="fas fa-calculator"></i>
+                                <span>➕</span>
                             </div>
                             <h4>مفهوم رياضي</h4>
                             <p>إضافة نشاط لمفهوم جديد</p>
                         </button>
                         <button class="action-card" onclick="showAddModal('science')">
                             <div class="action-icon">
-                                <i class="fas fa-flask"></i>
+                                <span>🧪</span>
                             </div>
                             <h4>تجربة علمية</h4>
                             <p>إضافة نشاط لتجربة جديدة</p>
@@ -282,11 +287,11 @@
                 <div class="section-card">
                     <div class="section-header">
                         <h2 class="section-title">
-                            <i class="fas fa-history"></i>
+                            <span class="section-icon">🕐</span>
                             أحدث الإضافات
                         </h2>
                         <button class="btn-text" onclick="switchTab('fullPortfolio')">
-                            <i class="fas fa-eye"></i>
+                            <span class="btn-icon">👁️</span>
                             عرض الكل
                         </button>
                     </div>
@@ -299,21 +304,21 @@
             <!-- Full Portfolio Page -->
             <section id="fullPortfolio" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-book-open"></i> الملف الكامل</h1>
+                    <h1><span class="header-icon">📚</span> الملف الكامل</h1>
                     <p>عرض جميع المواد والأنشطة مع الصور والتفاصيل في صفحة واحدة</p>
                 </div>
                 
                 <div class="portfolio-controls">
                     <button class="btn-primary" onclick="printFullPortfolio()">
-                        <i class="fas fa-print"></i>
+                        <span class="btn-icon">🖨️</span>
                         طباعة الملف
                     </button>
                     <button class="btn-secondary" onclick="exportFullPortfolio()">
-                        <i class="fas fa-file-pdf"></i>
+                        <span class="btn-icon">📄</span>
                         تصدير PDF
                     </button>
                     <button class="btn-success" onclick="switchTab('dashboard')">
-                        <i class="fas fa-home"></i>
+                        <span class="btn-icon">🏠</span>
                         العودة للرئيسية
                     </button>
                 </div>
@@ -327,21 +332,21 @@
             <!-- Arabic Content -->
             <section id="arabic" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-font"></i> اللغة العربية</h1>
+                    <h1><span class="header-icon">🔤</span> اللغة العربية</h1>
                     <p>إدارة حروف وأنشطة اللغة العربية</p>
                 </div>
                 
                 <div class="section-actions">
                     <button class="btn-primary" onclick="showAddModal('arabic')">
-                        <i class="fas fa-plus"></i>
+                        <span class="btn-icon">➕</span>
                         إضافة حرف جديد
                     </button>
                     <button class="btn-secondary" onclick="exportSection('arabic')">
-                        <i class="fas fa-download"></i>
+                        <span class="btn-icon">📥</span>
                         تصدير القسم
                     </button>
                     <button class="btn-success" onclick="switchTab('fullPortfolio')">
-                        <i class="fas fa-eye"></i>
+                        <span class="btn-icon">👁️</span>
                         عرض الكل
                     </button>
                 </div>
@@ -351,20 +356,21 @@
                 </div>
             </section>
 
+            <!-- باقي الصفحات بنفس النمط -->
             <!-- English Content -->
             <section id="english" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-language"></i> اللغة الإنجليزية</h1>
+                    <h1><span class="header-icon">🔡</span> اللغة الإنجليزية</h1>
                     <p>إدارة كلمات وأنشطة اللغة الإنجليزية</p>
                 </div>
                 
                 <div class="section-actions">
                     <button class="btn-primary" onclick="showAddModal('english')">
-                        <i class="fas fa-plus"></i>
+                        <span class="btn-icon">➕</span>
                         إضافة كلمة جديدة
                     </button>
                     <button class="btn-success" onclick="switchTab('fullPortfolio')">
-                        <i class="fas fa-eye"></i>
+                        <span class="btn-icon">👁️</span>
                         عرض الكل
                     </button>
                 </div>
@@ -377,17 +383,17 @@
             <!-- Quran Content -->
             <section id="quran" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-book-quran"></i> القرآن الكريم</h1>
+                    <h1><span class="header-icon">📖</span> القرآن الكريم</h1>
                     <p>إدارة سور وأنشطة القرآن الكريم</p>
                 </div>
                 
                 <div class="section-actions">
                     <button class="btn-primary" onclick="showAddModal('quran')">
-                        <i class="fas fa-plus"></i>
+                        <span class="btn-icon">➕</span>
                         إضافة سورة جديدة
                     </button>
                     <button class="btn-success" onclick="switchTab('fullPortfolio')">
-                        <i class="fas fa-eye"></i>
+                        <span class="btn-icon">👁️</span>
                         عرض الكل
                     </button>
                 </div>
@@ -400,17 +406,17 @@
             <!-- Math Content -->
             <section id="math" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-calculator"></i> الرياضيات</h1>
+                    <h1><span class="header-icon">➕</span> الرياضيات</h1>
                     <p>إدارة مفاهيم وأنشطة الرياضيات</p>
                 </div>
                 
                 <div class="section-actions">
                     <button class="btn-primary" onclick="showAddModal('math')">
-                        <i class="fas fa-plus"></i>
+                        <span class="btn-icon">➕</span>
                         إضافة مفهوم جديد
                     </button>
                     <button class="btn-success" onclick="switchTab('fullPortfolio')">
-                        <i class="fas fa-eye"></i>
+                        <span class="btn-icon">👁️</span>
                         عرض الكل
                     </button>
                 </div>
@@ -423,17 +429,17 @@
             <!-- Science Content -->
             <section id="science" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-flask"></i> العلوم</h1>
+                    <h1><span class="header-icon">🧪</span> العلوم</h1>
                     <p>إدارة تجارب وأنشطة العلوم</p>
                 </div>
                 
                 <div class="section-actions">
                     <button class="btn-primary" onclick="showAddModal('science')">
-                        <i class="fas fa-plus"></i>
+                        <span class="btn-icon">➕</span>
                         إضافة تجربة جديدة
                     </button>
                     <button class="btn-success" onclick="switchTab('fullPortfolio')">
-                        <i class="fas fa-eye"></i>
+                        <span class="btn-icon">👁️</span>
                         عرض الكل
                     </button>
                 </div>
@@ -446,17 +452,17 @@
             <!-- Activities Content -->
             <section id="activities" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-chalkboard"></i> النشاطات المدرسية</h1>
+                    <h1><span class="header-icon">🎯</span> النشاطات المدرسية</h1>
                     <p>إدارة جميع النشاطات والإنجازات</p>
                 </div>
                 
                 <div class="section-actions">
                     <button class="btn-primary" onclick="showAddModal('activities')">
-                        <i class="fas fa-plus"></i>
+                        <span class="btn-icon">➕</span>
                         إضافة نشاط جديد
                     </button>
                     <button class="btn-success" onclick="switchTab('fullPortfolio')">
-                        <i class="fas fa-eye"></i>
+                        <span class="btn-icon">👁️</span>
                         عرض الكل
                     </button>
                 </div>
@@ -469,7 +475,7 @@
             <!-- Reports -->
             <section id="reports" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-chart-bar"></i> التقارير والإحصائيات</h1>
+                    <h1><span class="header-icon">📊</span> التقارير والإحصائيات</h1>
                     <p>تقارير مفصلة وإحصائيات عن ملف الإنجاز</p>
                 </div>
                 
@@ -481,17 +487,17 @@
             <!-- Settings -->
             <section id="settings" class="tab-content">
                 <div class="content-header">
-                    <h1><i class="fas fa-cogs"></i> الإعدادات</h1>
+                    <h1><span class="header-icon">⚙️</span> الإعدادات</h1>
                     <p>إعدادات النظام والتخصيص</p>
                 </div>
                 
                 <div class="settings-container">
                     <div class="setting-card">
-                        <h3><i class="fas fa-palette"></i> التصميم</h3>
+                        <h3><span class="setting-icon">🎨</span> التصميم</h3>
                         <div class="setting-content">
                             <div class="setting-item">
                                 <label>
-                                    <i class="fas fa-moon"></i>
+                                    <span class="label-icon">🌙</span>
                                     الوضع الداكن
                                 </label>
                                 <label class="switch">
@@ -501,7 +507,7 @@
                             </div>
                             <div class="setting-item">
                                 <label>
-                                    <i class="fas fa-image"></i>
+                                    <span class="label-icon">🖼️</span>
                                     جودة الصور
                                 </label>
                                 <select id="imageQuality">
@@ -514,11 +520,11 @@
                     </div>
                     
                     <div class="setting-card">
-                        <h3><i class="fas fa-database"></i> البيانات</h3>
+                        <h3><span class="setting-icon">💾</span> البيانات</h3>
                         <div class="setting-content">
                             <div class="setting-item">
                                 <label>
-                                    <i class="fas fa-save"></i>
+                                    <span class="label-icon">🔄</span>
                                     نسخ احتياطية تلقائية
                                 </label>
                                 <label class="switch">
@@ -527,25 +533,25 @@
                                 </label>
                             </div>
                             <button class="btn-secondary" onclick="clearAllData()">
-                                <i class="fas fa-trash"></i>
+                                <span class="btn-icon">🗑️</span>
                                 حذف جميع البيانات
                             </button>
                         </div>
                     </div>
                     
                     <div class="setting-card">
-                        <h3><i class="fas fa-tools"></i> الأدوات</h3>
+                        <h3><span class="setting-icon">🔧</span> الأدوات</h3>
                         <div class="setting-content">
                             <button class="btn-primary" onclick="backupData()">
-                                <i class="fas fa-download"></i>
+                                <span class="btn-icon">💾</span>
                                 نسخة احتياطية
                             </button>
                             <button class="btn-secondary" onclick="restoreBackup()">
-                                <i class="fas fa-upload"></i>
+                                <span class="btn-icon">📤</span>
                                 استعادة نسخة
                             </button>
                             <button class="btn-success" onclick="resetSettings()">
-                                <i class="fas fa-redo"></i>
+                                <span class="btn-icon">🔄</span>
                                 إعادة تعيين الإعدادات
                             </button>
                         </div>
@@ -559,9 +565,9 @@
     <div class="modal" id="addModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-plus-circle"></i> <span id="modalTitle">إضافة عنصر جديد</span></h3>
-                <button class="close-btn" onclick="closeModal('addModal')">
-                    <i class="fas fa-times"></i>
+                <h3><span class="modal-icon">➕</span> <span id="modalTitle">إضافة عنصر جديد</span></h3>
+                <button class="close-btn" onclick="closeModal('addModal')" title="إغلاق">
+                    <span class="close-icon">×</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -570,26 +576,26 @@
                     
                     <div class="form-group">
                         <label for="itemTitle">
-                            <i class="fas fa-heading"></i>
+                            <span class="label-icon">📝</span>
                             العنوان
                         </label>
                         <input type="text" id="itemTitle" placeholder="أدخل العنوان..." required>
                         <small class="form-help">
-                            <i class="fas fa-info-circle"></i>
+                            <span class="help-icon">💡</span>
                             مثال: حرف الألف، سورة الفاتحة، مفهوم الجمع...
                         </small>
                     </div>
                     
                     <div class="form-group">
                         <label for="itemDescription">
-                            <i class="fas fa-align-left"></i>
+                            <span class="label-icon">📄</span>
                             الوصف
                         </label>
                         <textarea id="itemDescription" placeholder="وصف النشاط..." rows="4"></textarea>
                     </div>
                     
                     <div class="form-section">
-                        <h4><i class="fas fa-images"></i> الصور (اختياري)</h4>
+                        <h4><span class="section-icon">🖼️</span> الصور (اختياري)</h4>
                         <p class="section-description">يمكنك رفع صورتين لكل نشاط</p>
                         
                         <div class="image-upload-grid">
@@ -597,7 +603,7 @@
                                 <input type="file" id="imageFile1" class="file-input" accept="image/*" 
                                        onchange="previewImage(this, 'imagePreview1')">
                                 <div class="upload-placeholder" id="imagePreview1">
-                                    <i class="fas fa-camera"></i>
+                                    <span class="upload-icon">📷</span>
                                     <span>الصورة الأولى</span>
                                     <small>انقر لاختيار صورة</small>
                                 </div>
@@ -607,7 +613,7 @@
                                 <input type="file" id="imageFile2" class="file-input" accept="image/*" 
                                        onchange="previewImage(this, 'imagePreview2')">
                                 <div class="upload-placeholder" id="imagePreview2">
-                                    <i class="fas fa-camera"></i>
+                                    <span class="upload-icon">📷</span>
                                     <span>الصورة الثانية</span>
                                     <small>انقر لاختيار صورة</small>
                                 </div>
@@ -617,11 +623,11 @@
                     
                     <div class="form-actions">
                         <button type="button" class="btn-secondary" onclick="closeModal('addModal')">
-                            <i class="fas fa-times"></i>
+                            <span class="btn-icon">✖️</span>
                             إلغاء
                         </button>
                         <button type="button" class="btn-primary" onclick="saveItem()">
-                            <i class="fas fa-save"></i>
+                            <span class="btn-icon">💾</span>
                             حفظ العنصر
                         </button>
                     </div>
@@ -634,9 +640,9 @@
     <div class="modal" id="printModal">
         <div class="modal-content modal-sm">
             <div class="modal-header">
-                <h3><i class="fas fa-print"></i> خيارات الطباعة</h3>
-                <button class="close-btn" onclick="closeModal('printModal')">
-                    <i class="fas fa-times"></i>
+                <h3><span class="modal-icon">🖨️</span> خيارات الطباعة</h3>
+                <button class="close-btn" onclick="closeModal('printModal')" title="إغلاق">
+                    <span class="close-icon">×</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -644,28 +650,28 @@
                     <div class="option-group">
                         <label class="option-label">
                             <input type="radio" name="printOption" value="full" checked>
-                            <i class="fas fa-book"></i>
+                            <span class="option-icon">📚</span>
                             <span>الملف الكامل</span>
                         </label>
                         <label class="option-label">
                             <input type="radio" name="printOption" value="current">
-                            <i class="fas fa-folder"></i>
+                            <span class="option-icon">📁</span>
                             <span>القسم الحالي فقط</span>
                         </label>
                         <label class="option-label">
                             <input type="radio" name="printOption" value="selected">
-                            <i class="fas fa-check-circle"></i>
+                            <span class="option-icon">✅</span>
                             <span>عناصر محددة</span>
                         </label>
                     </div>
                 </div>
                 <div class="modal-actions">
                     <button class="btn-secondary" onclick="closeModal('printModal')">
-                        <i class="fas fa-times"></i>
+                        <span class="btn-icon">✖️</span>
                         إلغاء
                     </button>
                     <button class="btn-primary" onclick="handlePrint()">
-                        <i class="fas fa-print"></i>
+                        <span class="btn-icon">🖨️</span>
                         طباعة
                     </button>
                 </div>
@@ -677,8 +683,8 @@
     <div class="modal" id="imagePreviewModal" style="background: rgba(0,0,0,0.9); display: none;">
         <div class="modal-content" style="background: transparent; box-shadow: none; max-width: 90%; padding: 20px;">
             <button class="close-btn" onclick="closeModal('imagePreviewModal')" 
-                    style="position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.2); z-index: 1001;">
-                <i class="fas fa-times"></i>
+                    style="position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.2); z-index: 1001; color: white;">
+                <span class="close-icon">×</span>
             </button>
             <img id="previewedImage" style="width: 100%; height: auto; border-radius: 8px;">
         </div>

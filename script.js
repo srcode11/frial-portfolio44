@@ -14,6 +14,7 @@ let portfolioData = {
 };
 
 let currentSubject = null;
+let isFirebaseConnected = false;
 
 // تهيئة التطبيق
 document.addEventListener('DOMContentLoaded', function() {
@@ -64,11 +65,6 @@ function setupEventListeners() {
         previewImage(e.target, 'preview2');
     });
     
-    // زر الإضافة من الرئيسية
-    document.querySelector('.header-actions .btn-primary').addEventListener('click', function() {
-        showSubjectSelection();
-    });
-    
     console.log('✅ تم إعداد واجهة المستخدم');
 }
 
@@ -88,6 +84,11 @@ async function loadData() {
         // 2. محاولة Firebase (بشكل غير متزامن)
         if (window.firebaseDb) {
             await loadFromFirebase();
+        } else {
+            console.log('⚠️ Firebase غير متوفر، استخدام التخزين المحلي فقط');
+            if (!savedData) {
+                loadSampleData();
+            }
         }
         
     } catch (error) {
@@ -111,26 +112,50 @@ async function loadFromFirebase() {
             window.firebaseDb.collection('portfolio').doc('activities').get()
         ]);
         
+        let hasFirebaseData = false;
+        
         // تحديث البيانات إذا وجدت
-        if (arabicSnap.exists) portfolioData.arabic = arabicSnap.data().items || [];
-        if (englishSnap.exists) portfolioData.english = englishSnap.data().items || [];
-        if (quranSnap.exists) portfolioData.quran = quranSnap.data().items || [];
-        if (mathSnap.exists) portfolioData.math = mathSnap.data().items || [];
-        if (scienceSnap.exists) portfolioData.science = scienceSnap.data().items || [];
-        if (activitiesSnap.exists) portfolioData.activities = activitiesSnap.data().items || [];
+        if (arabicSnap.exists && arabicSnap.data().items) {
+            portfolioData.arabic = arabicSnap.data().items;
+            hasFirebaseData = true;
+        }
+        if (englishSnap.exists && englishSnap.data().items) {
+            portfolioData.english = englishSnap.data().items;
+            hasFirebaseData = true;
+        }
+        if (quranSnap.exists && quranSnap.data().items) {
+            portfolioData.quran = quranSnap.data().items;
+            hasFirebaseData = true;
+        }
+        if (mathSnap.exists && mathSnap.data().items) {
+            portfolioData.math = mathSnap.data().items;
+            hasFirebaseData = true;
+        }
+        if (scienceSnap.exists && scienceSnap.data().items) {
+            portfolioData.science = scienceSnap.data().items;
+            hasFirebaseData = true;
+        }
+        if (activitiesSnap.exists && activitiesSnap.data().items) {
+            portfolioData.activities = activitiesSnap.data().items;
+            hasFirebaseData = true;
+        }
         
-        // تحديث التخزين المحلي
-        localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
+        if (hasFirebaseData) {
+            // تحديث التخزين المحلي
+            localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
+            console.log('✅ تم تحميل البيانات من Firebase (مقسمة)');
+            isFirebaseConnected = true;
+            showToast('تم تحميل البيانات من السحابة', 'success');
+        } else {
+            console.log('📭 لا توجد بيانات في Firebase');
+            isFirebaseConnected = true; // الاتصال ناجح لكن بدون بيانات
+        }
         
-        console.log('✅ تم تحميل البيانات من Firebase (مقسمة)');
         updateDashboard();
         
     } catch (error) {
         console.warn('⚠️ فشل الاتصال بـ Firebase:', error.message);
-        // إذا لم تكن هناك بيانات محلية، تحميل بيانات نموذجية
-        if (!localStorage.getItem('teacherPortfolio')) {
-            loadSampleData();
-        }
+        isFirebaseConnected = false;
     }
 }
 
@@ -200,6 +225,9 @@ function updateDashboard() {
     const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 100) * 100)) : 0;
     document.getElementById('completionRate').textContent = `${completionRate}%`;
     
+    // تحديث حالة الاتصال في الـ Footer
+    updateConnectionStatus();
+    
     // تحديث العناصر الحديثة
     updateRecentItems();
     
@@ -207,6 +235,18 @@ function updateDashboard() {
     Object.keys(portfolioData).forEach(subject => {
         updateSection(subject);
     });
+}
+
+// تحديث حالة الاتصال
+function updateConnectionStatus() {
+    const footerStats = document.querySelector('.footer-stats p:nth-child(2)');
+    if (footerStats) {
+        if (isFirebaseConnected) {
+            footerStats.innerHTML = 'تم التطوير باستخدام HTML5 & Firebase <span style="color: #4CAF50;">(متصل)</span>';
+        } else {
+            footerStats.innerHTML = 'تم التطوير باستخدام HTML5 & Firebase <span style="color: #f44336;">(غير متصل)</span>';
+        }
+    }
 }
 
 // تحديث العناصر الحديثة

@@ -29,7 +29,7 @@
                     <i class="fas fa-graduation-cap"></i>
                     <div class="logo-text">
                         <h1>ملف إنجاز المعلمة</h1>
-                        <h2>فريال ابراهيم الغماري</h2>
+                        <h2>فريال عبدالله الغماري</h2>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -310,7 +310,7 @@
                 </div>
                 <div class="footer-stats">
                     <p>العام الدراسي: ١٤٤٥ - ١٤٤٦ هـ</p>
-                    <p>تم التطوير باستخدام HTML5 & Firebase</p>
+                    <p id="connectionStatus">تم التطوير باستخدام HTML5 & Firebase</p>
                 </div>
             </div>
         </div>
@@ -402,29 +402,19 @@
         try {
             const app = firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
-            const storage = firebase.storage();
             
             window.firebaseApp = app;
             window.firebaseDb = db;
-            window.firebaseStorage = storage;
             
             console.log("✅ Firebase initialized successfully");
             
-            // Test connection
-            db.collection('portfolio').doc('connection-test').set({
-                test: true,
-                timestamp: new Date().toISOString()
-            }).then(() => {
-                console.log("✅ Firestore connection test passed");
-                // Clean up test document
-                db.collection('portfolio').doc('connection-test').delete();
-            }).catch(err => {
-                console.warn("⚠️ Firestore connection test failed:", err.message);
-            });
+            // اختبار الاتصال بدون كتابة (تجنب مشكلة الأذونات)
+            db.collection('portfolio').doc('test').get()
+                .then(() => console.log("✅ Firestore connection test passed"))
+                .catch(err => console.log("⚠️ Firestore connection test (read only):", err.message));
             
         } catch (error) {
             console.log("⚠️ Firebase initialization error:", error.message);
-            // الموقع سيستمر بالعمل مع التخزين المحلي
         }
     </script>
 

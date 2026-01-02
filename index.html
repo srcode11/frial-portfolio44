@@ -36,9 +36,6 @@
                     <button class="btn btn-primary" onclick="showSubjectSelection()">
                         <i class="fas fa-plus"></i> إضافة جديد
                     </button>
-                    <button class="btn btn-secondary" onclick="syncWithFirebase()" title="مزامنة مع السحابة">
-                        <i class="fas fa-cloud-upload-alt"></i> مزامنة
-                    </button>
                     <button class="btn btn-secondary" onclick="printPortfolio()">
                         <i class="fas fa-print"></i> طباعة
                     </button>
@@ -402,16 +399,18 @@
         try {
             const app = firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
+            const storage = firebase.storage();
             
             window.firebaseApp = app;
             window.firebaseDb = db;
+            window.firebaseStorage = storage;
             
             console.log("✅ Firebase initialized successfully");
             
-            // اختبار الاتصال بدون كتابة (تجنب مشكلة الأذونات)
-            db.collection('portfolio').doc('test').get()
+            // Test connection
+            db.collection('portfolio_items').limit(1).get()
                 .then(() => console.log("✅ Firestore connection test passed"))
-                .catch(err => console.log("⚠️ Firestore connection test (read only):", err.message));
+                .catch(err => console.log("⚠️ Firestore connection test:", err.message));
             
         } catch (error) {
             console.log("⚠️ Firebase initialization error:", error.message);

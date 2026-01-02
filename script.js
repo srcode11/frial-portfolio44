@@ -1,3 +1,5 @@
+[file name]: script.js
+[file content begin]
 // نظام ملف الإنجاز - المعلمة فريال الغماري
 console.log('🎓 نظام ملف الإنجاز - جاري التحميل...');
 
@@ -75,53 +77,61 @@ async function loadData() {
     console.log('📥 جاري تحميل البيانات...');
     
     try {
-        // محاولة Firebase أولاً
+        // 1. تحميل من التخزين المحلي أولاً (سرعة)
+        const savedData = localStorage.getItem('teacherPortfolio');
+        if (savedData) {
+            portfolioData = JSON.parse(savedData);
+            console.log('✅ تم تحميل البيانات من التخزين المحلي');
+            updateDashboard();
+        }
+        
+        // 2. محاولة Firebase (بشكل غير متزامن)
         if (window.firebaseDb) {
-            console.log('🔗 محاولة الاتصال بـ Firebase...');
-            const docRef = window.firebaseDb.collection('portfolio').doc('data');
-            
-            // استخدم get() بدون await أولاً للتحقق
-            docRef.get().then(docSnap => {
-                if (docSnap.exists) {
-                    portfolioData = docSnap.data();
-                    console.log('✅ تم تحميل البيانات من Firebase:', portfolioData);
-                    showToast('تم تحميل البيانات من السحابة', 'success');
-                    updateDashboard();
-                } else {
-                    // إنشاء وثيقة جديدة
-                    docRef.set(portfolioData).then(() => {
-                        console.log('📝 تم إنشاء ملف جديد في Firebase');
-                        showToast('تم إنشاء ملف جديد', 'info');
-                        updateDashboard();
-                    });
-                }
-            }).catch(error => {
-                console.warn('⚠️ فشل الاتصال بـ Firebase:', error.message);
-                // استخدام التخزين المحلي
-                useLocalStorage();
-            });
-        } else {
-            useLocalStorage();
+            await loadFromFirebase();
         }
         
     } catch (error) {
         console.error('❌ خطأ في تحميل البيانات:', error);
-        useLocalStorage();
+        showToast('حدث خطأ في تحميل البيانات', 'error');
     }
 }
 
-// استخدام التخزين المحلي
-function useLocalStorage() {
-    const savedData = localStorage.getItem('teacherPortfolio');
-    if (savedData) {
-        portfolioData = JSON.parse(savedData);
-        console.log('✅ تم تحميل البيانات من التخزين المحلي');
-        showToast('تم تحميل البيانات المحفوظة', 'info');
-    } else {
-        // استخدام بيانات نموذجية للاختبار
-        loadSampleData();
+// تحميل البيانات من Firebase (بشكل مقسم)
+async function loadFromFirebase() {
+    try {
+        console.log('🔗 محاولة الاتصال بـ Firebase...');
+        
+        // جلب البيانات المقسمة
+        const [arabicSnap, englishSnap, quranSnap, mathSnap, scienceSnap, activitiesSnap] = await Promise.all([
+            window.firebaseDb.collection('portfolio').doc('arabic').get(),
+            window.firebaseDb.collection('portfolio').doc('english').get(),
+            window.firebaseDb.collection('portfolio').doc('quran').get(),
+            window.firebaseDb.collection('portfolio').doc('math').get(),
+            window.firebaseDb.collection('portfolio').doc('science').get(),
+            window.firebaseDb.collection('portfolio').doc('activities').get()
+        ]);
+        
+        // تحديث البيانات إذا وجدت
+        if (arabicSnap.exists) portfolioData.arabic = arabicSnap.data().items || [];
+        if (englishSnap.exists) portfolioData.english = englishSnap.data().items || [];
+        if (quranSnap.exists) portfolioData.quran = quranSnap.data().items || [];
+        if (mathSnap.exists) portfolioData.math = mathSnap.data().items || [];
+        if (scienceSnap.exists) portfolioData.science = scienceSnap.data().items || [];
+        if (activitiesSnap.exists) portfolioData.activities = activitiesSnap.data().items || [];
+        
+        // تحديث التخزين المحلي
+        localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
+        
+        console.log('✅ تم تحميل البيانات من Firebase (مقسمة)');
+        updateDashboard();
+        
+    } catch (error) {
+        console.warn('⚠️ فشل الاتصال بـ Firebase:', error.message);
+        // إذا لم تكن هناك بيانات محلية، تحميل بيانات نموذجية
+        if (!localStorage.getItem('teacherPortfolio')) {
+            loadSampleData();
+        }
     }
-    updateDashboard();
 }
 
 // تحميل بيانات نموذجية للاختبار
@@ -154,9 +164,14 @@ function loadSampleData() {
                 date: '١٤٤٥/٠٣/١٤',
                 timestamp: Date.now() - 86400000
             }
-        ]
+        ],
+        quran: [],
+        math: [],
+        science: [],
+        activities: []
     };
     
+    localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
     showToast('تم تحميل بيانات نموذجية', 'info');
 }
 
@@ -640,13 +655,12 @@ async function saveItem() {
                 break;
         }
         
-        // معالجة الصور
+        // معالجة الصور (Base64)
         item.images = [];
         
         const image1 = document.getElementById('image1').files[0];
         const image2 = document.getElementById('image2').files[0];
         
-        // استخدام Base64 مباشرة بدون Firebase Storage
         if (image1) {
             const url1 = await convertImageToBase64(image1);
             if (url1) item.images.push(url1);
@@ -670,8 +684,12 @@ async function saveItem() {
         // محاولة حفظ في Firebase (بشكل غير متزامن)
         try {
             if (window.firebaseDb) {
-                await window.firebaseDb.collection('portfolio').doc('data').set(portfolioData);
-                console.log('✅ تم الحفظ في Firebase');
+                // حفظ القسم المحدد فقط في Firebase
+                await window.firebaseDb.collection('portfolio').doc(subject).set({
+                    items: portfolioData[subject],
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log(`✅ تم الحفظ في Firebase (${subject})`);
             }
         } catch (firebaseError) {
             console.warn('⚠️ فشل الحفظ في Firebase:', firebaseError.message);
@@ -697,7 +715,7 @@ function convertImageToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = function(e) {
-            resolve(e.target.result); // Base64 string
+            resolve(e.target.result);
         };
         reader.onerror = reject;
         reader.readAsDataURL(file);
@@ -759,7 +777,10 @@ async function deleteItem(subject, itemId) {
         // محاولة تحديث Firebase
         try {
             if (window.firebaseDb) {
-                await window.firebaseDb.collection('portfolio').doc('data').set(portfolioData);
+                await window.firebaseDb.collection('portfolio').doc(subject).set({
+                    items: portfolioData[subject],
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
             }
         } catch (firebaseError) {
             console.warn('⚠️ فشل التحديث في Firebase:', firebaseError.message);
@@ -939,6 +960,29 @@ function showToast(message, type = 'info') {
     }, 5000);
 }
 
+// دالة جديدة: مزامنة البيانات مع Firebase (اختياري)
+async function syncWithFirebase() {
+    try {
+        showToast('جارٍ مزامنة البيانات مع السحابة...', 'info');
+        
+        // مزامنة كل الأقسام مع Firebase
+        const promises = Object.keys(portfolioData).map(async (subject) => {
+            await window.firebaseDb.collection('portfolio').doc(subject).set({
+                items: portfolioData[subject],
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        });
+        
+        await Promise.all(promises);
+        
+        showToast('تمت مزامنة البيانات بنجاح', 'success');
+        
+    } catch (error) {
+        console.error('❌ خطأ في المزامنة:', error);
+        showToast('فشلت مزامنة البيانات', 'error');
+    }
+}
+
 // جعل الدوال متاحة عالمياً
 window.switchTab = switchTab;
 window.addItem = addItem;
@@ -950,5 +994,7 @@ window.deleteItem = deleteItem;
 window.viewImage = viewImage;
 window.printPortfolio = printPortfolio;
 window.showSubjectSelection = showSubjectSelection;
+window.syncWithFirebase = syncWithFirebase;
 
 console.log('🎉 النظام جاهز! جميع الميزات تعمل بشكل صحيح.');
+[file content end]

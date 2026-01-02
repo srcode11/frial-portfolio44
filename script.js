@@ -12,7 +12,6 @@ let portfolioData = {
 };
 
 let currentSubject = null;
-let isLoading = false;
 
 // تهيئة التطبيق
 document.addEventListener('DOMContentLoaded', function() {
@@ -73,49 +72,56 @@ function setupEventListeners() {
 
 // تحميل البيانات
 async function loadData() {
-    if (isLoading) return;
-    isLoading = true;
+    console.log('📥 جاري تحميل البيانات...');
     
     try {
-        console.log('📥 جاري تحميل البيانات...');
-        
         // محاولة Firebase أولاً
         if (window.firebaseDb) {
+            console.log('🔗 محاولة الاتصال بـ Firebase...');
             const docRef = window.firebaseDb.collection('portfolio').doc('data');
-            const docSnap = await docRef.get();
             
-            if (docSnap.exists()) {
-                portfolioData = docSnap.data();
-                console.log('✅ تم تحميل البيانات من Firebase');
-                showToast('تم تحميل البيانات من السحابة', 'success');
-            } else {
-                // إنشاء وثيقة جديدة
-                await docRef.set(portfolioData);
-                console.log('📝 تم إنشاء ملف جديد في Firebase');
-                showToast('تم إنشاء ملف جديد', 'info');
-            }
+            // استخدم get() بدون await أولاً للتحقق
+            docRef.get().then(docSnap => {
+                if (docSnap.exists) {
+                    portfolioData = docSnap.data();
+                    console.log('✅ تم تحميل البيانات من Firebase:', portfolioData);
+                    showToast('تم تحميل البيانات من السحابة', 'success');
+                    updateDashboard();
+                } else {
+                    // إنشاء وثيقة جديدة
+                    docRef.set(portfolioData).then(() => {
+                        console.log('📝 تم إنشاء ملف جديد في Firebase');
+                        showToast('تم إنشاء ملف جديد', 'info');
+                        updateDashboard();
+                    });
+                }
+            }).catch(error => {
+                console.warn('⚠️ فشل الاتصال بـ Firebase:', error.message);
+                // استخدام التخزين المحلي
+                useLocalStorage();
+            });
         } else {
-            // استخدام التخزين المحلي
-            const savedData = localStorage.getItem('teacherPortfolio');
-            if (savedData) {
-                portfolioData = JSON.parse(savedData);
-                console.log('✅ تم تحميل البيانات من التخزين المحلي');
-                showToast('تم تحميل البيانات المحفوظة', 'info');
-            }
+            useLocalStorage();
         }
-        
-        // تحديث الواجهة
-        updateDashboard();
         
     } catch (error) {
         console.error('❌ خطأ في تحميل البيانات:', error);
-        showToast('خطأ في تحميل البيانات', 'error');
-        
-        // استخدام بيانات افتراضية للاختبار
-        loadSampleData();
-    } finally {
-        isLoading = false;
+        useLocalStorage();
     }
+}
+
+// استخدام التخزين المحلي
+function useLocalStorage() {
+    const savedData = localStorage.getItem('teacherPortfolio');
+    if (savedData) {
+        portfolioData = JSON.parse(savedData);
+        console.log('✅ تم تحميل البيانات من التخزين المحلي');
+        showToast('تم تحميل البيانات المحفوظة', 'info');
+    } else {
+        // استخدام بيانات نموذجية للاختبار
+        loadSampleData();
+    }
+    updateDashboard();
 }
 
 // تحميل بيانات نموذجية للاختبار
@@ -129,8 +135,8 @@ function loadSampleData() {
                 title: 'حرف الألف',
                 description: 'تعلم حرف الألف مع نشاط الرسم والتلوين',
                 images: [
-                    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=800',
-                    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w-800'
+                    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=400&q=80'
                 ],
                 date: '١٤٤٥/٠٣/١٥',
                 timestamp: Date.now()
@@ -142,30 +148,16 @@ function loadSampleData() {
                 title: 'حرف A',
                 description: 'Learning letter A with fun activities',
                 images: [
-                    'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=800',
-                    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=800'
+                    'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80'
                 ],
                 date: '١٤٤٥/٠٣/١٤',
                 timestamp: Date.now() - 86400000
-            }
-        ],
-        quran: [
-            {
-                id: '3',
-                title: 'سورة الفاتحة',
-                description: 'حفظ وتلاوة سورة الفاتحة مع شرح المعاني',
-                images: [
-                    'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=800',
-                    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800'
-                ],
-                date: '١٤٤٥/٠٣/١٠',
-                timestamp: Date.now() - 172800000
             }
         ]
     };
     
     showToast('تم تحميل بيانات نموذجية', 'info');
-    updateDashboard();
 }
 
 // تحديث لوحة التحكم
@@ -322,6 +314,10 @@ function createItemCard(item, subject) {
     const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
     const date = item.date || formatDate(new Date(item.timestamp || Date.now()));
     
+    // استخدام صور افتراضية إذا كانت الصور فارغة
+    const image1 = item.images && item.images[0] ? item.images[0] : getDefaultImage(subject, 1);
+    const image2 = item.images && item.images[1] ? item.images[1] : getDefaultImage(subject, 2);
+    
     card.innerHTML = `
         <div class="item-header">
             <div class="item-title">${title}</div>
@@ -330,17 +326,11 @@ function createItemCard(item, subject) {
         <div class="item-body">
             <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
             <div class="item-images">
-                <div class="item-image" onclick="viewImage('${item.images?.[0] || ''}')">
-                    ${item.images && item.images[0] ? 
-                        `<img src="${item.images[0]}" alt="الصورة الأولى">` : 
-                        '<div class="item-image empty"><i class="fas fa-image"></i></div>'
-                    }
+                <div class="item-image" onclick="viewImage('${image1}')">
+                    <img src="${image1}" alt="الصورة الأولى" onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
                 </div>
-                <div class="item-image" onclick="viewImage('${item.images?.[1] || ''}')">
-                    ${item.images && item.images[1] ? 
-                        `<img src="${item.images[1]}" alt="الصورة الثانية">` : 
-                        '<div class="item-image empty"><i class="fas fa-image"></i></div>'
-                    }
+                <div class="item-image" onclick="viewImage('${image2}')">
+                    <img src="${image2}" alt="الصورة الثانية" onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
                 </div>
             </div>
             <div class="item-actions">
@@ -355,6 +345,39 @@ function createItemCard(item, subject) {
     `;
     
     return card;
+}
+
+// الحصول على صورة افتراضية حسب القسم
+function getDefaultImage(subject, index) {
+    const defaultImages = {
+        arabic: [
+            'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&q=80',
+            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&q=80'
+        ],
+        english: [
+            'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&q=80',
+            'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80'
+        ],
+        quran: [
+            'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&q=80',
+            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80'
+        ],
+        math: [
+            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&q=80',
+            'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?w=400&q=80'
+        ],
+        science: [
+            'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&q=80',
+            'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400&q=80'
+        ],
+        activities: [
+            'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&q=80',
+            'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&q=80'
+        ]
+    };
+    
+    return defaultImages[subject] ? defaultImages[subject][index - 1] : 
+           'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80';
 }
 
 // الحصول على أيقونة المادة
@@ -623,13 +646,14 @@ async function saveItem() {
         const image1 = document.getElementById('image1').files[0];
         const image2 = document.getElementById('image2').files[0];
         
+        // استخدام Base64 مباشرة بدون Firebase Storage
         if (image1) {
-            const url1 = await uploadImage(image1, subject);
+            const url1 = await convertImageToBase64(image1);
             if (url1) item.images.push(url1);
         }
         
         if (image2) {
-            const url2 = await uploadImage(image2, subject);
+            const url2 = await convertImageToBase64(image2);
             if (url2) item.images.push(url2);
         }
         
@@ -639,17 +663,19 @@ async function saveItem() {
         }
         portfolioData[subject].push(item);
         
-        // حفظ في Firebase
-        if (window.firebaseDb) {
-            await window.firebaseDb.collection('portfolio').doc('data').update({
-                [subject]: portfolioData[subject]
-            });
-            console.log('✅ تم الحفظ في Firebase');
-        }
-        
-        // حفظ في التخزين المحلي
+        // حفظ في التخزين المحلي (فوراً)
         localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
         console.log('✅ تم الحفظ في التخزين المحلي');
+        
+        // محاولة حفظ في Firebase (بشكل غير متزامن)
+        try {
+            if (window.firebaseDb) {
+                await window.firebaseDb.collection('portfolio').doc('data').set(portfolioData);
+                console.log('✅ تم الحفظ في Firebase');
+            }
+        } catch (firebaseError) {
+            console.warn('⚠️ فشل الحفظ في Firebase:', firebaseError.message);
+        }
         
         // تحديث الواجهة
         updateDashboard();
@@ -666,30 +692,16 @@ async function saveItem() {
     }
 }
 
-// رفع الصورة
-async function uploadImage(file, subject) {
-    try {
-        // إذا كان Firebase Storage متاحاً
-        if (window.firebaseStorage) {
-            const fileName = `${Date.now()}_${subject}_${file.name}`;
-            const storageRef = window.firebaseStorage.ref(`portfolio-images/${fileName}`);
-            const snapshot = await storageRef.put(file);
-            const downloadURL = await snapshot.ref.getDownloadURL();
-            return downloadURL;
-        } else {
-            // استخدام Base64 للتخزين المحلي
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    resolve(e.target.result); // Base64 string
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-    } catch (error) {
-        console.warn('⚠️ فشل رفع الصورة:', error);
-        return null;
-    }
+// تحويل الصورة إلى Base64
+function convertImageToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            resolve(e.target.result); // Base64 string
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 // تعديل العنصر
@@ -741,15 +753,17 @@ async function deleteItem(subject, itemId) {
         // حذف من البيانات المحلية
         portfolioData[subject] = portfolioData[subject].filter(item => item.id !== itemId);
         
-        // تحديث Firebase
-        if (window.firebaseDb) {
-            await window.firebaseDb.collection('portfolio').doc('data').update({
-                [subject]: portfolioData[subject]
-            });
-        }
-        
         // تحديث التخزين المحلي
         localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
+        
+        // محاولة تحديث Firebase
+        try {
+            if (window.firebaseDb) {
+                await window.firebaseDb.collection('portfolio').doc('data').set(portfolioData);
+            }
+        } catch (firebaseError) {
+            console.warn('⚠️ فشل التحديث في Firebase:', firebaseError.message);
+        }
         
         // تحديث الواجهة
         updateDashboard();
@@ -802,8 +816,8 @@ function printPortfolio() {
                 .print-header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #333; padding-bottom: 20px; }
                 .print-section { margin-bottom: 40px; page-break-inside: avoid; }
                 .print-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
-                .print-images { display: flex; gap: 10px; margin-top: 10px; }
-                .print-images img { max-width: 200px; max-height: 150px; object-fit: cover; }
+                .print-images { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+                .print-images img { max-width: 200px; max-height: 150px; object-fit: cover; border: 1px solid #ddd; }
                 @page { margin: 2cm; }
                 @media print {
                     .no-print { display: none; }
@@ -849,7 +863,7 @@ function printPortfolio() {
                         ${item.images && item.images.length > 0 ? `
                             <div class="print-images">
                                 ${item.images.map((img, index) => 
-                                    `<img src="${img}" alt="الصورة ${index + 1}">`
+                                    `<img src="${img}" alt="الصورة ${index + 1}" onerror="this.style.display='none'">`
                                 ).join('')}
                             </div>
                         ` : ''}

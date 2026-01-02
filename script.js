@@ -1,7 +1,7 @@
-// نظام ملف الإنجاز المبسط - يعمل 100%
+// نظام ملف الإنجاز - المعلمة فريال الغماري
 console.log('🎓 نظام ملف الإنجاز - جاري التحميل...');
 
-// البيانات
+// البيانات العالمية
 let portfolioData = {
     arabic: [],
     english: [],
@@ -17,32 +17,28 @@ let currentSubject = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 بدء تهيئة التطبيق...');
     
-    // إخفاء التحميل بعد 1.5 ثانية
-    setTimeout(() => {
-        document.getElementById('loading').style.display = 'none';
-        document.querySelector('.app').style.display = 'block';
-        initializeApp();
-    }, 1500);
+    try {
+        // 1. إعداد الأحداث
+        setupEventListeners();
+        
+        // 2. تحميل البيانات
+        loadData();
+        
+        // 3. عرض الصفحة الرئيسية
+        updateDashboard();
+        
+        console.log('✅ تم تهيئة التطبيق بنجاح');
+        
+    } catch (error) {
+        console.error('❌ خطأ في تهيئة التطبيق:', error);
+        showToast('حدث خطأ في تحميل التطبيق', 'error');
+    }
 });
 
-// تهيئة التطبيق
-function initializeApp() {
-    console.log('🔧 جاري تهيئة التطبيق...');
-    
-    // تحميل البيانات
-    loadData();
-    
-    // إعداد الأحداث
-    setupEventListeners();
-    
-    // تحديث الواجهة
-    updateDashboard();
-    
-    console.log('✅ تم تهيئة التطبيق بنجاح');
-}
-
-// إعداد الأحداث
+// إعداد مستمعي الأحداث
 function setupEventListeners() {
+    console.log('🔧 جاري إعداد واجهة المستخدم...');
+    
     // التبويبات
     document.querySelectorAll('.nav-tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -57,30 +53,78 @@ function setupEventListeners() {
         saveItem();
     });
     
-    // زر الإضافة السريعة
-    document.querySelector('.btn-primary').addEventListener('click', showAddModal);
+    // معاينة الصور
+    document.getElementById('image1').addEventListener('change', function(e) {
+        previewImage(e.target, 'preview1');
+    });
+    
+    document.getElementById('image2').addEventListener('change', function(e) {
+        previewImage(e.target, 'preview2');
+    });
+    
+    // زر الإضافة من الرئيسية
+    document.querySelector('.header-actions .btn-primary').addEventListener('click', function() {
+        showSubjectSelection();
+    });
+    
+    console.log('✅ تم إعداد واجهة المستخدم');
 }
 
 // تحميل البيانات
-function loadData() {
+async function loadData() {
     console.log('📥 جاري تحميل البيانات...');
     
     try {
-        const savedData = localStorage.getItem('teacherPortfolio');
-        if (savedData) {
-            portfolioData = JSON.parse(savedData);
-            console.log('✅ تم تحميل البيانات من التخزين المحلي');
+        // محاولة Firebase أولاً
+        if (window.firebaseDb) {
+            console.log('🔗 محاولة الاتصال بـ Firebase...');
+            const docRef = window.firebaseDb.collection('portfolio').doc('data');
+            
+            // استخدم get() بدون await أولاً للتحقق
+            docRef.get().then(docSnap => {
+                if (docSnap.exists) {
+                    portfolioData = docSnap.data();
+                    console.log('✅ تم تحميل البيانات من Firebase:', portfolioData);
+                    showToast('تم تحميل البيانات من السحابة', 'success');
+                    updateDashboard();
+                } else {
+                    // إنشاء وثيقة جديدة
+                    docRef.set(portfolioData).then(() => {
+                        console.log('📝 تم إنشاء ملف جديد في Firebase');
+                        showToast('تم إنشاء ملف جديد', 'info');
+                        updateDashboard();
+                    });
+                }
+            }).catch(error => {
+                console.warn('⚠️ فشل الاتصال بـ Firebase:', error.message);
+                // استخدام التخزين المحلي
+                useLocalStorage();
+            });
         } else {
-            // تحميل بيانات نموذجية
-            loadSampleData();
+            useLocalStorage();
         }
+        
     } catch (error) {
         console.error('❌ خطأ في تحميل البيانات:', error);
-        loadSampleData();
+        useLocalStorage();
     }
 }
 
-// تحميل بيانات نموذجية
+// استخدام التخزين المحلي
+function useLocalStorage() {
+    const savedData = localStorage.getItem('teacherPortfolio');
+    if (savedData) {
+        portfolioData = JSON.parse(savedData);
+        console.log('✅ تم تحميل البيانات من التخزين المحلي');
+        showToast('تم تحميل البيانات المحفوظة', 'info');
+    } else {
+        // استخدام بيانات نموذجية للاختبار
+        loadSampleData();
+    }
+    updateDashboard();
+}
+
+// تحميل بيانات نموذجية للاختبار
 function loadSampleData() {
     console.log('📝 جاري تحميل بيانات نموذجية...');
     
@@ -91,77 +135,29 @@ function loadSampleData() {
                 title: 'حرف الألف',
                 description: 'تعلم حرف الألف مع نشاط الرسم والتلوين',
                 images: [
-                    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&q=80',
-                    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&q=80'
+                    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=400&q=80'
                 ],
                 date: '١٤٤٥/٠٣/١٥',
                 timestamp: Date.now()
-            },
-            {
-                id: '2',
-                title: 'حرف الباء',
-                description: 'تعلم حرف الباء مع نشاط القص واللصق',
-                images: [
-                    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80',
-                    'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&q=80'
-                ],
-                date: '١٤٤٥/٠٣/١٠',
-                timestamp: Date.now() - 86400000
             }
         ],
         english: [
             {
-                id: '3',
+                id: '2',
                 title: 'حرف A',
                 description: 'Learning letter A with fun activities',
                 images: [
-                    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
-                    'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&q=80'
+                    'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=400&q=80',
+                    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80'
                 ],
-                date: '١٤٤٥/٠٣/١٢',
-                timestamp: Date.now() - 172800000
-            }
-        ],
-        quran: [
-            {
-                id: '4',
-                title: 'سورة الفاتحة',
-                description: 'حفظ وتلاوة سورة الفاتحة',
-                images: [
-                    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
-                    'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&q=80'
-                ],
-                date: '١٤٤٥/٠٣/٠٥',
-                timestamp: Date.now() - 259200000
-            }
-        ],
-        activities: [
-            {
-                id: '5',
-                title: 'معرض الصور',
-                description: 'معرض لإنجازات الطلاب',
-                images: [
-                    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&q=80',
-                    'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&q=80'
-                ],
-                date: '١٤٤٥/٠٣/٠١',
-                timestamp: Date.now() - 345600000
+                date: '١٤٤٥/٠٣/١٤',
+                timestamp: Date.now() - 86400000
             }
         ]
     };
     
-    console.log('✅ تم تحميل بيانات نموذجية');
-}
-
-// حفظ البيانات
-function saveData() {
-    try {
-        // حفظ في localStorage فقط (بدون Firebase)
-        localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
-        console.log('✅ تم حفظ البيانات في التخزين المحلي');
-    } catch (error) {
-        console.error('❌ خطأ في حفظ البيانات:', error);
-    }
+    showToast('تم تحميل بيانات نموذجية', 'info');
 }
 
 // تحديث لوحة التحكم
@@ -174,29 +170,33 @@ function updateDashboard() {
         sum + arr.reduce((imgSum, item) => imgSum + (item.images ? item.images.length : 0), 0), 0);
     
     const thisMonth = new Date().getMonth();
+    const thisYear = new Date().getFullYear();
     const recentItems = Object.values(portfolioData).reduce((sum, arr) => 
         sum + arr.filter(item => {
             const itemDate = new Date(item.timestamp || Date.now());
-            return itemDate.getMonth() === thisMonth;
+            return itemDate.getMonth() === thisMonth && itemDate.getFullYear() === thisYear;
         }).length, 0);
     
     // تحديث DOM
     document.getElementById('totalItems').textContent = totalItems;
     document.getElementById('totalImages').textContent = totalImages;
     document.getElementById('recentItems').textContent = recentItems;
-    document.getElementById('completionRate').textContent = 
-        totalItems > 0 ? `${Math.min(100, Math.floor((totalItems / 50) * 100))}%` : '0%';
+    
+    const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 100) * 100)) : 0;
+    document.getElementById('completionRate').textContent = `${completionRate}%`;
     
     // تحديث العناصر الحديثة
     updateRecentItems();
     
     // تحديث كل قسم
-    updateAllSections();
+    Object.keys(portfolioData).forEach(subject => {
+        updateSection(subject);
+    });
 }
 
 // تحديث العناصر الحديثة
 function updateRecentItems() {
-    const container = document.getElementById('recentGrid');
+    const container = document.getElementById('recentItemsGrid');
     if (!container) return;
     
     // جمع جميع العناصر
@@ -213,8 +213,8 @@ function updateRecentItems() {
     // ترتيب حسب التاريخ (الأحدث أولاً)
     allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     
-    // أخذ 4 عناصر فقط
-    const recentItems = allItems.slice(0, 4);
+    // أخذ 6 عناصر فقط
+    const recentItems = allItems.slice(0, 6);
     
     // مسح المحتوى القديم
     container.innerHTML = '';
@@ -224,7 +224,7 @@ function updateRecentItems() {
             <div class="empty-state">
                 <i class="fas fa-inbox"></i>
                 <h3>لا توجد عناصر حديثة</h3>
-                <p>ابدأ بإضافة عناصر جديدة</p>
+                <p>ابدأ بإضافة عناصر جديدة إلى ملف الإنجاز</p>
             </div>
         `;
         return;
@@ -237,16 +237,43 @@ function updateRecentItems() {
     });
 }
 
-// تحديث جميع الأقسام
-function updateAllSections() {
-    Object.keys(portfolioData).forEach(subject => {
-        updateSection(subject);
+// تبديل التبويب
+function switchTab(tabId) {
+    console.log(`🔄 تبديل إلى التبويب: ${tabId}`);
+    
+    // تحديث التبويبات النشطة
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-tab') === tabId) {
+            tab.classList.add('active');
+        }
     });
+    
+    // تحديث المحتوى
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+        if (content.id === tabId) {
+            content.classList.add('active');
+        }
+    });
+    
+    // تحديث عنوان الصفحة
+    const tabNames = {
+        all: 'الرئيسية',
+        arabic: 'اللغة العربية',
+        english: 'الإنجليزية',
+        quran: 'القرآن الكريم',
+        math: 'الرياضيات',
+        science: 'العلوم',
+        activities: 'النشاطات'
+    };
+    
+    document.title = `${tabNames[tabId] || tabId} - ملف إنجاز المعلمة فريال`;
 }
 
 // تحديث قسم معين
 function updateSection(subject) {
-    const container = document.getElementById(`${subject}Container`);
+    const container = document.getElementById(`${subject}Items`);
     if (!container) return;
     
     const items = portfolioData[subject] || [];
@@ -259,9 +286,9 @@ function updateSection(subject) {
             <div class="empty-state">
                 <i class="${getSubjectIcon(subject)}"></i>
                 <h3>لا توجد عناصر</h3>
-                <p>ابدأ بإضافة أول عنصر</p>
-                <button class="btn btn-primary" onclick="showAddModal('${subject}')">
-                    <i class="fas fa-plus"></i> إضافة عنصر
+                <p>لم يتم إضافة أي عناصر إلى هذا القسم بعد</p>
+                <button class="btn btn-primary" onclick="addItem('${subject}')">
+                    <i class="fas fa-plus"></i> إضافة أول عنصر
                 </button>
             </div>
         `;
@@ -284,7 +311,7 @@ function createItemCard(item, subject) {
     card.className = 'item-card';
     card.dataset.id = item.id;
     
-    const title = item.title || 'عنصر جديد';
+    const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
     const date = item.date || formatDate(new Date(item.timestamp || Date.now()));
     
     // استخدام صور افتراضية إذا كانت الصور فارغة
@@ -320,9 +347,9 @@ function createItemCard(item, subject) {
     return card;
 }
 
-// الحصول على صورة افتراضية
+// الحصول على صورة افتراضية حسب القسم
 function getDefaultImage(subject, index) {
-    const images = {
+    const defaultImages = {
         arabic: [
             'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&q=80',
             'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&q=80'
@@ -349,7 +376,7 @@ function getDefaultImage(subject, index) {
         ]
     };
     
-    return images[subject] ? images[subject][index - 1] : 
+    return defaultImages[subject] ? defaultImages[subject][index - 1] : 
            'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80';
 }
 
@@ -361,46 +388,17 @@ function getSubjectIcon(subject) {
         quran: 'fas fa-book-quran',
         math: 'fas fa-calculator',
         science: 'fas fa-flask',
-        activities: 'fas fa-chalkboard-teacher'
+        activities: 'fas fa-chalkboard-teacher',
+        all: 'fas fa-home'
     };
     return icons[subject] || 'fas fa-file';
 }
 
-// تبديل التبويب
-function switchTab(tabId) {
-    console.log(`🔄 تبديل إلى التبويب: ${tabId}`);
+// إضافة عنصر
+function addItem(subject) {
+    console.log(`➕ إضافة عنصر إلى: ${subject}`);
     
-    // تحديث التبويبات النشطة
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.getAttribute('data-tab') === tabId) {
-            tab.classList.add('active');
-        }
-    });
-    
-    // تحديث المحتوى
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-        if (content.id === tabId) {
-            content.classList.add('active');
-        }
-    });
-    
-    // إذا كان التبويب ليس الرئيسية، تحديث القسم
-    if (tabId !== 'all') {
-        updateSection(tabId);
-    }
-}
-
-// عرض نافذة الإضافة
-function showAddModal(subject = null) {
-    if (subject) {
-        currentSubject = subject;
-    } else {
-        // إذا لم يتم تحديد القسم، نطلب من المستخدم اختياره
-        showSubjectSelection();
-        return;
-    }
+    currentSubject = subject;
     
     // تحديد عنوان النموذج
     const titles = {
@@ -412,8 +410,8 @@ function showAddModal(subject = null) {
         activities: 'إضافة نشاط مدرسي'
     };
     
-    document.getElementById('modalTitle').textContent = titles[currentSubject] || 'إضافة عنصر جديد';
-    document.getElementById('itemSubject').value = currentSubject;
+    document.getElementById('modalTitle').textContent = titles[subject] || 'إضافة عنصر جديد';
+    document.getElementById('itemSubject').value = subject;
     
     // مسح النموذج
     document.getElementById('itemForm').reset();
@@ -439,6 +437,7 @@ function showSubjectSelection() {
         align-items: center;
         justify-content: center;
         z-index: 2000;
+        backdrop-filter: blur(5px);
     `;
     
     modal.innerHTML = `
@@ -452,7 +451,7 @@ function showSubjectSelection() {
         ">
             <h3 style="margin-bottom: 30px; color: #333;">اختر القسم</h3>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                <button onclick="showAddModal('arabic'); this.closest('.modal').remove()" style="
+                <button onclick="addItem('arabic'); this.closest('.modal').remove()" style="
                     padding: 20px;
                     background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
                     border: none;
@@ -469,7 +468,7 @@ function showSubjectSelection() {
                     <span>العربية</span>
                 </button>
                 
-                <button onclick="showAddModal('english'); this.closest('.modal').remove()" style="
+                <button onclick="addItem('english'); this.closest('.modal').remove()" style="
                     padding: 20px;
                     background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
                     border: none;
@@ -486,7 +485,7 @@ function showSubjectSelection() {
                     <span>الإنجليزية</span>
                 </button>
                 
-                <button onclick="showAddModal('quran'); this.closest('.modal').remove()" style="
+                <button onclick="addItem('quran'); this.closest('.modal').remove()" style="
                     padding: 20px;
                     background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
                     border: none;
@@ -503,7 +502,7 @@ function showSubjectSelection() {
                     <span>القرآن</span>
                 </button>
                 
-                <button onclick="showAddModal('math'); this.closest('.modal').remove()" style="
+                <button onclick="addItem('math'); this.closest('.modal').remove()" style="
                     padding: 20px;
                     background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
                     border: none;
@@ -520,7 +519,7 @@ function showSubjectSelection() {
                     <span>الرياضيات</span>
                 </button>
                 
-                <button onclick="showAddModal('science'); this.closest('.modal').remove()" style="
+                <button onclick="addItem('science'); this.closest('.modal').remove()" style="
                     padding: 20px;
                     background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
                     border: none;
@@ -537,7 +536,7 @@ function showSubjectSelection() {
                     <span>العلوم</span>
                 </button>
                 
-                <button onclick="showAddModal('activities'); this.closest('.modal').remove()" style="
+                <button onclick="addItem('activities'); this.closest('.modal').remove()" style="
                     padding: 20px;
                     background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
                     border: none;
@@ -577,9 +576,16 @@ function previewImage(input, previewId) {
     const file = input.files[0];
     if (!file) return;
     
-    // التحقق من حجم الصورة (2MB كحد أقصى)
-    if (file.size > 2 * 1024 * 1024) {
-        showToast('حجم الصورة كبير جداً (الحد الأقصى 2MB)', 'error');
+    // التحقق من حجم الصورة (5MB كحد أقصى)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('حجم الصورة كبير جداً (الحد الأقصى 5MB)', 'error');
+        input.value = '';
+        return;
+    }
+    
+    // التحقق من نوع الصورة
+    if (!file.type.match('image.*')) {
+        showToast('الرجاء اختيار ملف صورة فقط', 'error');
         input.value = '';
         return;
     }
@@ -587,130 +593,130 @@ function previewImage(input, previewId) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const preview = document.getElementById(previewId);
-        preview.innerHTML = `<img src="${e.target.result}" alt="معاينة">`;
+        preview.innerHTML = `<img src="${e.target.result}" alt="معاينة الصورة">`;
     };
     reader.readAsDataURL(file);
 }
 
 // حفظ العنصر
-function saveItem() {
+async function saveItem() {
+    console.log('💾 جاري حفظ العنصر...');
+    
     const subject = document.getElementById('itemSubject').value;
-    const title = document.getElementById('itemTitle').value.trim();
+    const name = document.getElementById('itemName').value.trim();
     const description = document.getElementById('itemDesc').value.trim();
     
-    if (!title) {
+    if (!name) {
         showToast('الرجاء إدخال العنوان', 'error');
         return;
     }
     
-    showToast('جارٍ حفظ العنصر...', 'info');
-    
-    // إنشاء العنصر
-    const item = {
-        id: Date.now().toString(),
-        timestamp: Date.now(),
-        date: new Date().toLocaleDateString('ar-SA'),
-        title: title,
-        description: description
-    };
-    
-    // معالجة الصور
-    item.images = [];
-    
-    const image1 = document.getElementById('image1').files[0];
-    const image2 = document.getElementById('image2').files[0];
-    
-    // تحويل الصور إلى Base64 (بعد ضغطها)
-    if (image1) {
-        compressImage(image1, 800, 600).then(compressed => {
-            if (compressed) item.images.push(compressed);
-        });
-    }
-    
-    if (image2) {
-        compressImage(image2, 800, 600).then(compressed => {
-            if (compressed) item.images.push(compressed);
-            
-            // إضافة العنصر
-            addItemToSubject(subject, item);
-        });
-    } else {
-        // إضافة العنصر بدون الصورة الثانية
-        addItemToSubject(subject, item);
+    try {
+        showToast('جارٍ حفظ العنصر...', 'info');
+        
+        // إنشاء العنصر
+        const item = {
+            id: Date.now().toString(),
+            timestamp: Date.now(),
+            date: new Date().toLocaleDateString('ar-SA'),
+            title: name,
+            description: description
+        };
+        
+        // إضافة حقل خاص حسب القسم
+        switch(subject) {
+            case 'arabic':
+                item.letter = name;
+                break;
+            case 'english':
+                item.letter = name;
+                break;
+            case 'quran':
+                item.surah = name;
+                break;
+            case 'math':
+            case 'science':
+                item.concept = name;
+                break;
+        }
+        
+        // معالجة الصور
+        item.images = [];
+        
+        const image1 = document.getElementById('image1').files[0];
+        const image2 = document.getElementById('image2').files[0];
+        
+        // استخدام Base64 مباشرة بدون Firebase Storage
+        if (image1) {
+            const url1 = await convertImageToBase64(image1);
+            if (url1) item.images.push(url1);
+        }
+        
+        if (image2) {
+            const url2 = await convertImageToBase64(image2);
+            if (url2) item.images.push(url2);
+        }
+        
+        // إضافة إلى البيانات المحلية
+        if (!portfolioData[subject]) {
+            portfolioData[subject] = [];
+        }
+        portfolioData[subject].push(item);
+        
+        // حفظ في التخزين المحلي (فوراً)
+        localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
+        console.log('✅ تم الحفظ في التخزين المحلي');
+        
+        // محاولة حفظ في Firebase (بشكل غير متزامن)
+        try {
+            if (window.firebaseDb) {
+                await window.firebaseDb.collection('portfolio').doc('data').set(portfolioData);
+                console.log('✅ تم الحفظ في Firebase');
+            }
+        } catch (firebaseError) {
+            console.warn('⚠️ فشل الحفظ في Firebase:', firebaseError.message);
+        }
+        
+        // تحديث الواجهة
+        updateDashboard();
+        updateSection(subject);
+        
+        // إغلاق النموذج
+        closeModal();
+        
+        showToast('تم إضافة العنصر بنجاح', 'success');
+        
+    } catch (error) {
+        console.error('❌ خطأ في حفظ العنصر:', error);
+        showToast('حدث خطأ في حفظ العنصر', 'error');
     }
 }
 
-// ضغط الصورة
-function compressImage(file, maxWidth, maxHeight) {
-    return new Promise((resolve) => {
+// تحويل الصورة إلى Base64
+function convertImageToBase64(file) {
+    return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                
-                // حساب الأبعاد الجديدة
-                if (width > height) {
-                    if (width > maxWidth) {
-                        height = Math.round((height * maxWidth) / width);
-                        width = maxWidth;
-                    }
-                } else {
-                    if (height > maxHeight) {
-                        width = Math.round((width * maxHeight) / height);
-                        height = maxHeight;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                // تحويل إلى JPEG بجودة 80%
-                const compressed = canvas.toDataURL('image/jpeg', 0.8);
-                resolve(compressed);
-            };
-            img.src = e.target.result;
+            resolve(e.target.result); // Base64 string
         };
+        reader.onerror = reject;
         reader.readAsDataURL(file);
     });
 }
 
-// إضافة العنصر إلى القسم
-function addItemToSubject(subject, item) {
-    // إضافة إلى البيانات المحلية
-    if (!portfolioData[subject]) {
-        portfolioData[subject] = [];
-    }
-    portfolioData[subject].push(item);
-    
-    // حفظ البيانات
-    saveData();
-    
-    // تحديث الواجهة
-    updateDashboard();
-    updateSection(subject);
-    
-    // إغلاق النموذج
-    closeModal();
-    
-    showToast('تم إضافة العنصر بنجاح', 'success');
-}
-
 // تعديل العنصر
 function editItem(subject, itemId) {
+    console.log(`✏️ تعديل العنصر: ${itemId}`);
+    
     const item = portfolioData[subject].find(i => i.id === itemId);
     if (!item) return;
     
     currentSubject = subject;
     
+    // تعبئة النموذج
     document.getElementById('modalTitle').textContent = 'تعديل العنصر';
     document.getElementById('itemSubject').value = subject;
-    document.getElementById('itemTitle').value = item.title || '';
+    document.getElementById('itemName').value = item.letter || item.surah || item.concept || item.title || '';
     document.getElementById('itemDesc').value = item.description || '';
     
     // مسح معاينات الصور القديمة
@@ -726,40 +732,60 @@ function editItem(subject, itemId) {
         document.getElementById('preview2').innerHTML = `<img src="${item.images[1]}" alt="الصورة الحالية">`;
     }
     
+    // إظهار النموذج
     document.getElementById('addModal').style.display = 'flex';
+    
+    // حفظ معرف العنصر للنموذج
     document.getElementById('itemForm').dataset.editId = itemId;
 }
 
 // حذف العنصر
-function deleteItem(subject, itemId) {
-    if (!confirm('هل أنت متأكد من حذف هذا العنصر؟')) {
+async function deleteItem(subject, itemId) {
+    console.log(`🗑️ حذف العنصر: ${itemId}`);
+    
+    if (!confirm('هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذه العملية.')) {
         return;
     }
     
-    showToast('جارٍ حذف العنصر...', 'info');
-    
-    // حذف من البيانات المحلية
-    portfolioData[subject] = portfolioData[subject].filter(item => item.id !== itemId);
-    
-    // حفظ البيانات
-    saveData();
-    
-    // تحديث الواجهة
-    updateDashboard();
-    updateSection(subject);
-    
-    showToast('تم حذف العنصر بنجاح', 'success');
+    try {
+        showToast('جارٍ حذف العنصر...', 'info');
+        
+        // حذف من البيانات المحلية
+        portfolioData[subject] = portfolioData[subject].filter(item => item.id !== itemId);
+        
+        // تحديث التخزين المحلي
+        localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
+        
+        // محاولة تحديث Firebase
+        try {
+            if (window.firebaseDb) {
+                await window.firebaseDb.collection('portfolio').doc('data').set(portfolioData);
+            }
+        } catch (firebaseError) {
+            console.warn('⚠️ فشل التحديث في Firebase:', firebaseError.message);
+        }
+        
+        // تحديث الواجهة
+        updateDashboard();
+        updateSection(subject);
+        
+        showToast('تم حذف العنصر بنجاح', 'success');
+        
+    } catch (error) {
+        console.error('❌ خطأ في حذف العنصر:', error);
+        showToast('حدث خطأ في حذف العنصر', 'error');
+    }
 }
 
 // عرض الصورة
 function viewImage(url) {
     if (!url) return;
     
-    document.getElementById('viewerImage').src = url;
-    document.getElementById('imageViewer').style.display = 'flex';
+    document.getElementById('modalImageView').src = url;
+    document.getElementById('imageModal').style.display = 'flex';
 }
 
-// إغلاق النوافذ
+// إغلاق النموذج
 function closeModal() {
     document.getElementById('addModal').style.display = 'none';
     document.getElementById('itemForm').reset();
@@ -768,14 +794,19 @@ function closeModal() {
     delete document.getElementById('itemForm').dataset.editId;
 }
 
-function closeImageViewer() {
-    document.getElementById('imageViewer').style.display = 'none';
+// إغلاق نافذة الصورة
+function closeImageModal() {
+    document.getElementById('imageModal').style.display = 'none';
 }
 
-// طباعة الكل
-function printAll() {
-    showToast('جاري تحضير الطباعة...', 'info');
+// طباعة الملف
+function printPortfolio() {
+    console.log('🖨️ جاري تحضير الطباعة...');
     
+    // حفظ HTML الحالي
+    const originalHTML = document.body.innerHTML;
+    
+    // إنشاء محتوى للطباعة
     let printContent = `
         <html dir="rtl">
         <head>
@@ -802,6 +833,7 @@ function printAll() {
             </div>
     `;
     
+    // إضافة كل قسم
     Object.keys(portfolioData).forEach(subject => {
         const items = portfolioData[subject];
         if (items.length > 0) {
@@ -822,9 +854,10 @@ function printAll() {
             `;
             
             items.forEach(item => {
+                const title = item.letter || item.surah || item.concept || item.title || 'عنصر';
                 printContent += `
                     <div class="print-item">
-                        <h4>${item.title}</h4>
+                        <h4>${title}</h4>
                         <p><strong>التاريخ:</strong> ${item.date || 'غير محدد'}</p>
                         <p><strong>الوصف:</strong> ${item.description || 'لا يوجد وصف'}</p>
                         ${item.images && item.images.length > 0 ? `
@@ -855,6 +888,7 @@ function printAll() {
         </html>
     `;
     
+    // فتح نافذة الطباعة
     const printWindow = window.open('', '_blank');
     printWindow.document.write(printContent);
     printWindow.document.close();
@@ -873,8 +907,7 @@ function formatDate(date) {
 
 // عرض الإشعارات
 function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    
+    // إنشاء عنصر الإشعار
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
@@ -895,8 +928,10 @@ function showToast(message, type = 'info') {
         </button>
     `;
     
-    container.appendChild(toast);
+    // إضافة إلى الصفحة
+    document.body.appendChild(toast);
     
+    // إزالته تلقائياً بعد 5 ثوانٍ
     setTimeout(() => {
         if (toast.parentNode) {
             toast.remove();
@@ -905,15 +940,15 @@ function showToast(message, type = 'info') {
 }
 
 // جعل الدوال متاحة عالمياً
-window.showAddModal = showAddModal;
+window.switchTab = switchTab;
+window.addItem = addItem;
 window.closeModal = closeModal;
-window.closeImageViewer = closeImageViewer;
+window.closeImageModal = closeImageModal;
 window.saveItem = saveItem;
 window.editItem = editItem;
 window.deleteItem = deleteItem;
 window.viewImage = viewImage;
-window.printAll = printAll;
-window.previewImage = previewImage;
-window.switchTab = switchTab;
+window.printPortfolio = printPortfolio;
+window.showSubjectSelection = showSubjectSelection;
 
 console.log('🎉 النظام جاهز! جميع الميزات تعمل بشكل صحيح.');

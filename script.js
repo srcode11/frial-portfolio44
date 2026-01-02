@@ -3,8 +3,8 @@ console.log('🎓 نظام ملف الإنجاز - جاري التحميل...');
 
 // ⚡ إعدادات Cloudinary المبسطة
 const CLOUDINARY_CONFIG = {
-    cloudName: 'demo', // استخدم هذا للاختبار
-    uploadPreset: 'ml_default',
+    cloudName: 'demo', // للاختبار
+    uploadPreset: 'ml_default', // preset عام
     apiUrl: 'https://api.cloudinary.com/v1_1/demo/upload'
 };
 
@@ -20,6 +20,7 @@ let portfolioData = {
 
 let currentSubject = null;
 let isFirebaseConnected = false;
+let isLoading = false;
 
 // تهيئة التطبيق
 document.addEventListener('DOMContentLoaded', function() {
@@ -31,9 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 2. تحميل البيانات
         loadData();
-        
-        // 3. عرض الصفحة الرئيسية
-        updateDashboard();
         
         console.log('✅ تم تهيئة التطبيق بنجاح');
         
@@ -56,53 +54,55 @@ function setupEventListeners() {
     });
     
     // نموذج الإضافة
-    const itemForm = document.getElementById('itemForm');
-    if (itemForm) {
-        itemForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            saveItem();
-        });
-    }
+    document.getElementById('itemForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await saveItem();
+    });
     
     // معاينة الصور
-    const image1 = document.getElementById('image1');
-    const image2 = document.getElementById('image2');
+    document.getElementById('image1').addEventListener('change', function(e) {
+        previewImage(e.target, 'preview1');
+    });
     
-    if (image1) {
-        image1.addEventListener('change', function(e) {
-            previewImage(e.target, 'preview1');
-        });
-    }
-    
-    if (image2) {
-        image2.addEventListener('change', function(e) {
-            previewImage(e.target, 'preview2');
-        });
-    }
+    document.getElementById('image2').addEventListener('change', function(e) {
+        previewImage(e.target, 'preview2');
+    });
     
     console.log('✅ تم إعداد واجهة المستخدم');
 }
 
 // ==============================================
-// 🔄 نظام الحفظ الأساسي
+// 🔥 نظام Firebase فقط (بدون تخزين محلي)
 // ==============================================
 
 // تحميل البيانات
 async function loadData() {
+    if (isLoading) return;
+    
     console.log('📥 جاري تحميل البيانات...');
+    isLoading = true;
     
     try {
-        // محاولة Firebase أولاً
+        // إظهار شاشة تحميل
+        showLoading(true);
+        
         if (window.firebaseDb) {
             await loadFromFirebase();
         } else {
-            console.log('⚠️ Firebase غير متوفر، استخدام التخزين المحلي');
-            loadFromLocalStorage();
+            console.log('⚠️ Firebase غير متوفر');
+            showToast('يرجى الاتصال بالإنترنت', 'error');
+            
+            // تحميل بيانات تجريبية صغيرة فقط
+            loadMiniSampleData();
         }
         
     } catch (error) {
         console.error('❌ خطأ في تحميل البيانات:', error);
-        loadFromLocalStorage();
+        showToast('حدث خطأ في تحميل البيانات', 'error');
+        loadMiniSampleData();
+    } finally {
+        isLoading = false;
+        showLoading(false);
     }
 }
 
@@ -111,10 +111,11 @@ async function loadFromFirebase() {
     try {
         console.log('🔗 جاري تحميل البيانات من Firebase...');
         
+        // جلب كل الأقسام مرة واحدة
         const querySnapshot = await window.firebaseDb
             .collection('portfolio_items')
             .orderBy('timestamp', 'desc')
-            .limit(200)
+            .limit(100) // 100 عنصر فقط لكل تحميل
             .get();
         
         if (!querySnapshot.empty) {
@@ -144,6 +145,7 @@ async function loadFromFirebase() {
         } else {
             console.log('📭 لا توجد بيانات في Firebase');
             isFirebaseConnected = true;
+            loadMiniSampleData();
         }
         
         updateDashboard();
@@ -151,31 +153,14 @@ async function loadFromFirebase() {
     } catch (error) {
         console.warn('⚠️ فشل تحميل Firebase:', error.message);
         isFirebaseConnected = false;
-        loadFromLocalStorage();
+        showToast('فشل الاتصال بالسحابة', 'error');
+        loadMiniSampleData();
     }
 }
 
-// تحميل من التخزين المحلي
-function loadFromLocalStorage() {
-    const savedData = localStorage.getItem('teacherPortfolio');
-    if (savedData) {
-        try {
-            portfolioData = JSON.parse(savedData);
-            console.log('✅ تم تحميل البيانات من التخزين المحلي');
-            showToast('تم تحميل البيانات المحفوظة', 'info');
-        } catch (e) {
-            console.error('❌ خطأ في تحليل البيانات المحلية:', e);
-            loadSampleData();
-        }
-    } else {
-        loadSampleData();
-    }
-    updateDashboard();
-}
-
-// تحميل بيانات نموذجية
-function loadSampleData() {
-    console.log('📝 جاري تحميل بيانات نموذجية...');
+// تحميل بيانات تجريبية صغيرة
+function loadMiniSampleData() {
+    console.log('📝 جاري تحميل بيانات تجريبية صغيرة...');
     
     portfolioData = {
         arabic: [
@@ -183,41 +168,29 @@ function loadSampleData() {
                 id: '1',
                 subject: 'arabic',
                 title: 'حرف الألف',
-                description: 'تعلم حرف الألف مع نشاط الرسم والتلوين',
+                description: 'نشاط تعليمي',
                 imageUrls: [
-                    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=400&q=80'
+                    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=300&q=80'
                 ],
                 date: '١٤٤٥/٠٣/١٥',
                 timestamp: Date.now()
             }
         ],
-        english: [
-            {
-                id: '2',
-                subject: 'english',
-                title: 'حرف A',
-                description: 'Learning letter A with fun activities',
-                imageUrls: [
-                    'https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=400&q=80'
-                ],
-                date: '١٤٤٥/٠٣/١٤',
-                timestamp: Date.now() - 86400000
-            }
-        ],
+        english: [],
         quran: [],
         math: [],
         science: [],
         activities: []
     };
     
-    localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
-    showToast('تم تحميل بيانات نموذجية', 'info');
+    updateDashboard();
+    showToast('تم تحميل بيانات تجريبية', 'info');
 }
 
-// حفظ العنصر
+// حفظ العنصر (Firebase فقط)
 async function saveItem() {
+    if (isLoading) return;
+    
     console.log('💾 جاري حفظ العنصر...');
     
     const subject = document.getElementById('itemSubject').value;
@@ -229,8 +202,15 @@ async function saveItem() {
         return;
     }
     
+    if (!window.firebaseDb) {
+        showToast('غير متصل بالسحابة، يرجى المحاولة لاحقاً', 'error');
+        return;
+    }
+    
+    isLoading = true;
+    
     try {
-        showToast('جارٍ حفظ العنصر...', 'info');
+        showToast('جارٍ حفظ العنصر في السحابة...', 'info');
         
         // إنشاء العنصر
         const itemId = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -238,11 +218,11 @@ async function saveItem() {
             id: itemId,
             subject: subject,
             title: name,
-            description: description,
+            description: description || 'لا يوجد وصف',
             date: new Date().toLocaleDateString('ar-SA'),
             timestamp: Date.now(),
             imageUrls: [],
-            lastUpdated: Date.now()
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
         };
         
         // إضافة حقول خاصة
@@ -262,39 +242,43 @@ async function saveItem() {
                 break;
         }
         
-        // معالجة الصور
+        // معالجة الصور (بدون تخزين محلي)
         const image1 = document.getElementById('image1').files[0];
         const image2 = document.getElementById('image2').files[0];
         
-        if (image1) {
-            const url1 = await convertToBase64(image1);
-            if (url1) item.imageUrls.push(url1);
+        // رفع الصور إذا كانت صغيرة
+        if (image1 && image1.size < 2 * 1024 * 1024) { // 2MB كحد أقصى
+            try {
+                const base64 = await convertToBase64(image1);
+                // حفظ Base64 مباشرة في Firebase (للصور الصغيرة)
+                item.imageUrls.push(base64.substring(0, 50000)); // خذ 50000 حرف فقط
+            } catch (e) {
+                console.warn('⚠️ فشل تحويل الصورة 1:', e);
+            }
+        } else if (image1) {
+            showToast('الصورة كبيرة جداً، سيتم حفظها بدون صورة', 'warning');
         }
         
-        if (image2) {
-            const url2 = await convertToBase64(image2);
-            if (url2) item.imageUrls.push(url2);
+        if (image2 && image2.size < 2 * 1024 * 1024) {
+            try {
+                const base64 = await convertToBase64(image2);
+                item.imageUrls.push(base64.substring(0, 50000));
+            } catch (e) {
+                console.warn('⚠️ فشل تحويل الصورة 2:', e);
+            }
+        } else if (image2) {
+            showToast('الصورة كبيرة جداً، سيتم حفظها بدون صورة', 'warning');
         }
         
-        // إضافة إلى البيانات المحلية
+        // حفظ في Firebase فقط
+        await window.firebaseDb.collection('portfolio_items').doc(itemId).set(item);
+        
+        console.log(`✅ تم حفظ العنصر في Firebase: ${itemId}`);
+        
+        // إضافة إلى البيانات الحالية للتحديث الفوري
         portfolioData[subject].unshift(item);
         
-        // حفظ في التخزين المحلي
-        localStorage.setItem('teacherPortfolio', JSON.stringify(portfolioData));
-        console.log('✅ تم الحفظ في التخزين المحلي');
-        
-        // محاولة الحفظ في Firebase
-        try {
-            if (window.firebaseDb) {
-                await window.firebaseDb.collection('portfolio_items').doc(itemId).set({
-                    ...item,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                console.log('✅ تم الحفظ في Firebase');
-            }
-        } catch (firebaseError) {
-            console.warn('⚠️ فشل الحفظ في Firebase:', firebaseError.message);
-        }
+        // ✅ لا تحفظ في localStorage أبداً
         
         // تحديث الواجهة
         updateDashboard();
@@ -307,7 +291,15 @@ async function saveItem() {
         
     } catch (error) {
         console.error('❌ خطأ في حفظ العنصر:', error);
-        showToast('حدث خطأ في حفظ العنصر: ' + error.message, 'error');
+        
+        if (error.message.includes('quota') || error.message.includes('QuotaExceeded')) {
+            showToast('الحساب تجاوز الحد المسموح، يرجى حذف بعض العناصر', 'error');
+        } else {
+            showToast('حدث خطأ في حفظ العنصر: ' + error.message, 'error');
+        }
+        
+    } finally {
+        isLoading = false;
     }
 }
 
@@ -323,8 +315,98 @@ function convertToBase64(file) {
     });
 }
 
+// دالة جديدة: حذف عناصر قديمة لتوفير المساحة
+async function cleanupOldItems() {
+    try {
+        showToast('جارٍ تنظيف العناصر القديمة...', 'info');
+        
+        // جلب كل العناصر
+        const querySnapshot = await window.firebaseDb
+            .collection('portfolio_items')
+            .orderBy('timestamp')
+            .get();
+        
+        if (querySnapshot.size > 50) { // إذا كان هناك أكثر من 50 عنصر
+            const items = [];
+            querySnapshot.forEach(doc => {
+                items.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            // حذف النصف القديم
+            const itemsToDelete = items.slice(0, Math.floor(items.length / 2));
+            
+            for (const item of itemsToDelete) {
+                await window.firebaseDb.collection('portfolio_items').doc(item.id).delete();
+            }
+            
+            console.log(`✅ تم حذف ${itemsToDelete.length} عنصر قديم`);
+            showToast(`تم تنظيف ${itemsToDelete.length} عنصر قديم`, 'success');
+            
+            // إعادة تحميل البيانات
+            loadData();
+        }
+        
+    } catch (error) {
+        console.warn('⚠️ فشل تنظيف العناصر:', error);
+    }
+}
+
+// دالة جديدة: إظهار/إخفاء شاشة التحميل
+function showLoading(show) {
+    let loader = document.getElementById('loadingOverlay');
+    
+    if (!loader && show) {
+        loader = document.createElement('div');
+        loader.id = 'loadingOverlay';
+        loader.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 20px;
+            backdrop-filter: blur(5px);
+        `;
+        loader.innerHTML = `
+            <div style="text-align: center;">
+                <div style="
+                    border: 5px solid #f3f3f3;
+                    border-top: 5px solid #4361ee;
+                    border-radius: 50%;
+                    width: 50px;
+                    height: 50px;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 20px;
+                "></div>
+                <p>جاري التحميل...</p>
+            </div>
+        `;
+        
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(loader);
+    } else if (loader && !show) {
+        loader.remove();
+    }
+}
+
 // ==============================================
-// 🎨 دوال الواجهة
+// 🔄 باقي الدوال (معدلة)
 // ==============================================
 
 // تحديث لوحة التحكم
@@ -345,17 +427,12 @@ function updateDashboard() {
         }).length, 0);
     
     // تحديث DOM
-    const totalItemsEl = document.getElementById('totalItems');
-    const totalImagesEl = document.getElementById('totalImages');
-    const recentItemsEl = document.getElementById('recentItems');
-    const completionRateEl = document.getElementById('completionRate');
+    document.getElementById('totalItems').textContent = totalItems;
+    document.getElementById('totalImages').textContent = totalImages;
+    document.getElementById('recentItems').textContent = recentItems;
     
-    if (totalItemsEl) totalItemsEl.textContent = totalItems;
-    if (totalImagesEl) totalImagesEl.textContent = totalImages;
-    if (recentItemsEl) recentItemsEl.textContent = recentItems;
-    
-    const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 100) * 100)) : 0;
-    if (completionRateEl) completionRateEl.textContent = `${completionRate}%`;
+    const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 50) * 100)) : 0;
+    document.getElementById('completionRate').textContent = `${completionRate}%`;
     
     // تحديث حالة الاتصال
     updateConnectionStatus();
@@ -374,9 +451,9 @@ function updateConnectionStatus() {
     const footerStats = document.getElementById('connectionStatus');
     if (footerStats) {
         if (isFirebaseConnected) {
-            footerStats.innerHTML = 'Firebase <span style="color: #4CAF50;">(متصل)</span>';
+            footerStats.innerHTML = 'Firebase Cloud <span style="color: #4CAF50;">(متصل)</span>';
         } else {
-            footerStats.innerHTML = 'Firebase <span style="color: #f44336;">(غير متصل)</span>';
+            footerStats.innerHTML = 'Firebase Cloud <span style="color: #f44336;">(غير متصل)</span>';
         }
     }
 }
@@ -424,75 +501,7 @@ function updateRecentItems() {
     });
 }
 
-// تبديل التبويب
-function switchTab(tabId) {
-    console.log(`🔄 تبديل إلى التبويب: ${tabId}`);
-    
-    // تحديث التبويبات النشطة
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.getAttribute('data-tab') === tabId) {
-            tab.classList.add('active');
-        }
-    });
-    
-    // تحديث المحتوى
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-        if (content.id === tabId) {
-            content.classList.add('active');
-        }
-    });
-    
-    // تحديث عنوان الصفحة
-    const tabNames = {
-        all: 'الرئيسية',
-        arabic: 'اللغة العربية',
-        english: 'الإنجليزية',
-        quran: 'القرآن الكريم',
-        math: 'الرياضيات',
-        science: 'العلوم',
-        activities: 'النشاطات'
-    };
-    
-    document.title = `${tabNames[tabId] || tabId} - ملف إنجاز المعلمة فريال`;
-}
-
-// تحديث قسم معين
-function updateSection(subject) {
-    const container = document.getElementById(`${subject}Items`);
-    if (!container) return;
-    
-    const items = portfolioData[subject] || [];
-    
-    // مسح المحتوى القديم
-    container.innerHTML = '';
-    
-    if (items.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="${getSubjectIcon(subject)}"></i>
-                <h3>لا توجد عناصر</h3>
-                <p>لم يتم إضافة أي عناصر إلى هذا القسم بعد</p>
-                <button class="btn btn-primary" onclick="addItem('${subject}')">
-                    <i class="fas fa-plus"></i> إضافة أول عنصر
-                </button>
-            </div>
-        `;
-        return;
-    }
-    
-    // ترتيب العناصر (الأحدث أولاً)
-    items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    
-    // إضافة العناصر
-    items.forEach(item => {
-        const card = createItemCard(item, subject);
-        container.appendChild(card);
-    });
-}
-
-// إنشاء بطاقة عنصر
+// إنشاء بطاقة عنصر (معدلة للصور الصغيرة)
 function createItemCard(item, subject) {
     const card = document.createElement('div');
     card.className = 'item-card';
@@ -502,8 +511,16 @@ function createItemCard(item, subject) {
     const date = item.date || formatDate(new Date(item.timestamp || Date.now()));
     
     // استخدام صور افتراضية إذا كانت الصور فارغة
-    const image1 = item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : getDefaultImage(subject, 1);
-    const image2 = item.imageUrls && item.imageUrls[1] ? item.imageUrls[1] : getDefaultImage(subject, 2);
+    let image1 = 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=300&q=80';
+    let image2 = 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=300&q=80';
+    
+    if (item.imageUrls && item.imageUrls[0]) {
+        image1 = item.imageUrls[0].length > 1000 ? item.imageUrls[0] : getDefaultImage(subject, 1);
+    }
+    
+    if (item.imageUrls && item.imageUrls[1]) {
+        image2 = item.imageUrls[1].length > 1000 ? item.imageUrls[1] : getDefaultImage(subject, 2);
+    }
     
     card.innerHTML = `
         <div class="item-header">
@@ -514,10 +531,14 @@ function createItemCard(item, subject) {
             <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
             <div class="item-images">
                 <div class="item-image" onclick="viewImage('${image1}')">
-                    <img src="${image1}" alt="الصورة الأولى" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
+                    <img src="${image1}" alt="الصورة الأولى" loading="lazy" 
+                         style="width: 100%; height: 150px; object-fit: cover;"
+                         onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=300&q=80'">
                 </div>
                 <div class="item-image" onclick="viewImage('${image2}')">
-                    <img src="${image2}" alt="الصورة الثانية" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
+                    <img src="${image2}" alt="الصورة الثانية" loading="lazy"
+                         style="width: 100%; height: 150px; object-fit: cover;"
+                         onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=300&q=80'">
                 </div>
             </div>
             <div class="item-actions">
@@ -533,6 +554,23 @@ function createItemCard(item, subject) {
     
     return card;
 }
+
+// باقي الدوال تبقى كما هي...
+// [أضف هنا بقية الدوال من النسخة السابقة]
+// getDefaultImage(), getSubjectIcon(), addItem(), previewImage(),
+// editItem(), deleteItem(), closeModal(), viewImage(), closeImageModal(),
+// printPortfolio(), formatDate(), showToast(), showSubjectSelection()
+
+// ==============================================
+// إضافة زر تنظيف البيانات في HTML
+// ==============================================
+
+// في header-actions في HTML، أضف:
+// <button class="btn btn-warning" onclick="cleanupOldItems()" title="تنظيف العناصر القديمة">
+//     <i class="fas fa-broom"></i> تنظيف
+// </button>
+
+// جعل الدوال متاحة عالمياً
 
 // الحصول على صورة افتراضية حسب القسم
 function getDefaultImage(subject, index) {
@@ -1033,7 +1071,6 @@ function showSubjectSelection() {
     document.body.appendChild(modal);
 }
 
-// جعل الدوال متاحة عالمياً
 window.switchTab = switchTab;
 window.addItem = addItem;
 window.closeModal = closeModal;
@@ -1044,5 +1081,6 @@ window.deleteItem = deleteItem;
 window.viewImage = viewImage;
 window.printPortfolio = printPortfolio;
 window.showSubjectSelection = showSubjectSelection;
+window.cleanupOldItems = cleanupOldItems;
 
-console.log('🎉 النظام جاهز! يعمل مع Firebase والتخزين المحلي');
+console.log('🎉 النظام جاهز! يستخدم Firebase فقط بدون تخزين محلي');

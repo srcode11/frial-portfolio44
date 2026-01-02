@@ -29,12 +29,15 @@
                     <i class="fas fa-graduation-cap"></i>
                     <div class="logo-text">
                         <h1>ملف إنجاز المعلمة</h1>
-                        <h2>فريال عبدالله الغماري</h2>
+                        <h2>فريال ابراهيم الغماري</h2>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-primary" onclick="showAddModal()">
+                    <button class="btn btn-primary" onclick="showSubjectSelection()">
                         <i class="fas fa-plus"></i> إضافة جديد
+                    </button>
+                    <button class="btn btn-secondary" onclick="syncWithFirebase()" title="مزامنة مع السحابة">
+                        <i class="fas fa-cloud-upload-alt"></i> مزامنة
                     </button>
                     <button class="btn btn-secondary" onclick="printPortfolio()">
                         <i class="fas fa-print"></i> طباعة
@@ -384,7 +387,7 @@
 
     <!-- Firebase Configuration -->
     <script>
-        // Firebase Configuration - إصلاح المشكلة
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
             authDomain: "teacher-portfolio-fryal.firebaseapp.com",
@@ -395,27 +398,33 @@
             measurementId: "G-74HC2DH4YP"
         };
 
-        // Initialize Firebase بدون Authentication مؤقتاً
+        // Initialize Firebase
         try {
-            // Initialize only required services
             const app = firebase.initializeApp(firebaseConfig);
             const db = firebase.firestore();
             const storage = firebase.storage();
             
-            // Set globally
             window.firebaseApp = app;
             window.firebaseDb = db;
             window.firebaseStorage = storage;
             
-            console.log("✅ Firebase initialized (without auth)");
+            console.log("✅ Firebase initialized successfully");
             
             // Test connection
-            db.collection('test').doc('test').get()
-                .then(() => console.log("✅ Firestore connected"))
-                .catch(err => console.log("⚠️ Firestore test failed:", err.message));
-                
+            db.collection('portfolio').doc('connection-test').set({
+                test: true,
+                timestamp: new Date().toISOString()
+            }).then(() => {
+                console.log("✅ Firestore connection test passed");
+                // Clean up test document
+                db.collection('portfolio').doc('connection-test').delete();
+            }).catch(err => {
+                console.warn("⚠️ Firestore connection test failed:", err.message);
+            });
+            
         } catch (error) {
-            console.log("⚠️ Firebase init error:", error.message);
+            console.log("⚠️ Firebase initialization error:", error.message);
+            // الموقع سيستمر بالعمل مع التخزين المحلي
         }
     </script>
 

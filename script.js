@@ -12,6 +12,7 @@ let portfolioData = {
 };
 
 let currentSubject = null;
+let currentEditId = null;
 
 // تهيئة التطبيق
 document.addEventListener('DOMContentLoaded', async function() {
@@ -56,9 +57,9 @@ function setupEventListeners() {
     console.log('✅ تم إعداد واجهة المستخدم');
 }
 
-// تحميل بيانات ملف الإنجاز
+// تحميل بيانات ملف الإنجاز من Firebase
 async function loadPortfolioData() {
-    console.log('📥 جاري تحميل البيانات من Firebase...');
+    console.log('📥 جاري تحميل البيانات النصية من Firebase...');
     
     try {
         showToast('جارٍ تحميل البيانات...', 'info');
@@ -68,7 +69,7 @@ async function loadPortfolioData() {
         
         if (docSnap.exists) {
             portfolioData = docSnap.data();
-            console.log('✅ تم تحميل البيانات من Firebase:', portfolioData);
+            console.log('✅ تم تحميل البيانات النصية من Firebase:', portfolioData);
             showToast('تم تحميل البيانات بنجاح', 'success');
         } else {
             // إنشاء وثيقة جديدة
@@ -94,12 +95,12 @@ async function loadPortfolioData() {
         }
         
     } catch (error) {
-        console.error('❌ خطأ في تحميل البيانات:', error);
-        showToast('حدث خطأ في تحميل البيانات', 'error');
+        console.error('❌ خطأ في تحميل البيانات من Firebase:', error);
+        showToast('حدث خطأ في تحميل البيانات النصية', 'error');
     }
 }
 
-// حفظ البيانات في Firebase
+// حفظ البيانات في Firebase (النصوص فقط)
 async function savePortfolioData() {
     try {
         await db.collection('portfolio').doc('data').set({
@@ -107,11 +108,11 @@ async function savePortfolioData() {
             updatedAt: new Date().toISOString()
         }, { merge: true });
         
-        console.log('✅ تم حفظ البيانات في Firebase');
+        console.log('✅ تم حفظ البيانات النصية في Firebase');
         return true;
         
     } catch (error) {
-        console.error('❌ خطأ في حفظ البيانات:', error);
+        console.error('❌ خطأ في حفظ البيانات في Firebase:', error);
         throw error;
     }
 }
@@ -336,7 +337,7 @@ function getSubjectIcon(subject) {
     return icons[subject] || 'fas fa-file';
 }
 
-// فتح واجهة رفع Cloudinary
+// فتح واجهة رفع Cloudinary للصور
 function openUploadWidget(inputId) {
     const myWidget = cloudinary.createUploadWidget({
         cloudName: CLOUDINARY_CONFIG.cloudName,
@@ -347,8 +348,11 @@ function openUploadWidget(inputId) {
         clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
         maxFileSize: 5000000, // 5MB
         folder: 'teacher_portfolio',
-        resource_type: 'auto',
-        cropping: false
+        resource_type: 'image',
+        cropping: false,
+        showAdvancedOptions: false,
+        tags: ['teacher_portfolio'],
+        context: { alt: 'Teacher Portfolio Image' }
     }, (error, result) => {
         if (!error && result && result.event === "success") {
             const secureUrl = result.info.secure_url;
@@ -360,9 +364,17 @@ function openUploadWidget(inputId) {
             const previewDiv = document.getElementById(`preview${inputId.slice(-1)}`);
             previewDiv.innerHTML = `<img src="${secureUrl}" alt="الصورة المرفوعة" style="max-width:100%; max-height:200px; object-fit:contain;">`;
             
-            showToast('تم رفع الصورة بنجاح', 'success');
+            showToast('تم رفع الصورة إلى Cloudinary بنجاح', 'success');
+            
+            // حفظ الصورة مؤقتاً للاستخدام
+            if (inputId === 'image1') {
+                window.tempImage1Url = secureUrl;
+            } else if (inputId === 'image2') {
+                window.tempImage2Url = secureUrl;
+            }
+            
         } else if (error) {
-            console.error('❌ خطأ في رفع الصورة:', error);
+            console.error('❌ خطأ في رفع الصورة إلى Cloudinary:', error);
             showToast('حدث خطأ في رفع الصورة', 'error');
         }
     });
@@ -370,9 +382,13 @@ function openUploadWidget(inputId) {
     myWidget.open();
 }
 
-// إضافة عنصر
+// إضافة عنصر جديد
 function addItem(subject) {
-    console.log(`➕ إضافة عنصر إلى: ${subject}`);
+    console.log(`➕ إضافة عنصر جديد إلى: ${subject}`);
+    
+    // إعادة تعيين حالة التعديل
+    currentEditId = null;
+    document.getElementById('itemId').value = '';
     
     // تحديد عنوان النموذج
     const titles = {
@@ -386,7 +402,6 @@ function addItem(subject) {
     
     document.getElementById('modalTitle').textContent = titles[subject] || 'إضافة عنصر جديد';
     document.getElementById('itemSubject').value = subject;
-    document.getElementById('itemId').value = '';
     
     // مسح النموذج
     document.getElementById('itemForm').reset();
@@ -438,9 +453,7 @@ async function saveItem() {
             date: new Date().toLocaleDateString('ar-SA'),
             title: name,
             description: description,
-            images: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            images: []
         };
         
         // إضافة حقل خاص حسب القسم
@@ -460,7 +473,7 @@ async function saveItem() {
                 break;
         }
         
-        // إضافة روابط الصور
+        // إضافة روابط الصور من Cloudinary
         if (image1Url) item.images.push(image1Url);
         if (image2Url) item.images.push(image2Url);
         
@@ -484,7 +497,7 @@ async function saveItem() {
             portfolioData[subject].push(item);
         }
         
-        // حفظ في Firebase
+        // حفظ النصوص في Firebase
         await savePortfolioData();
         
         // تحديث الواجهة
@@ -512,10 +525,13 @@ function editItem(subject, itemId) {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
     
+    // حفظ معرف العنصر للتعديل
+    currentEditId = itemId;
+    document.getElementById('itemId').value = itemId;
+    
     // تعبئة النموذج
     document.getElementById('modalTitle').textContent = 'تعديل العنصر';
     document.getElementById('itemSubject').value = subject;
-    document.getElementById('itemId').value = itemId;
     document.getElementById('itemName').value = item.letter || item.surah || item.concept || item.title || '';
     document.getElementById('itemDesc').value = item.description || '';
     
@@ -582,7 +598,7 @@ async function deleteItem(subject, itemId) {
     }
 }
 
-// عرض الصورة
+// عرض الصورة في نافذة منبثقة
 function viewImage(url) {
     if (!url) return;
     
@@ -590,13 +606,14 @@ function viewImage(url) {
     document.getElementById('imageModal').style.display = 'flex';
 }
 
-// إغلاق النموذج
+// إغلاق نافذة إضافة/تعديل العنصر
 function closeModal() {
     document.getElementById('addModal').style.display = 'none';
     document.getElementById('itemForm').reset();
     document.getElementById('itemId').value = '';
     document.getElementById('image1Url').value = '';
     document.getElementById('image2Url').value = '';
+    currentEditId = null;
 }
 
 // إغلاق نافذة الصورة
@@ -741,6 +758,162 @@ function showToast(message, type = 'info') {
     }, 5000);
 }
 
+// إظهار نافذة إضافة جديد
+function showAddModal() {
+    // عرض اختيار القسم
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        backdrop-filter: blur(5px);
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        ">
+            <h3 style="margin-bottom: 30px; color: #333; font-size: 1.5rem;">اختر القسم للإضافة</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px;">
+                <button onclick="addItem('arabic'); this.closest('.modal').remove()" style="
+                    padding: 20px;
+                    background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+                    border: none;
+                    border-radius: 10px;
+                    color: white;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    transition: transform 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-book" style="font-size: 1.5rem;"></i>
+                    <span>العربية</span>
+                </button>
+                
+                <button onclick="addItem('english'); this.closest('.modal').remove()" style="
+                    padding: 20px;
+                    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+                    border: none;
+                    border-radius: 10px;
+                    color: white;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    transition: transform 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-language" style="font-size: 1.5rem;"></i>
+                    <span>الإنجليزية</span>
+                </button>
+                
+                <button onclick="addItem('quran'); this.closest('.modal').remove()" style="
+                    padding: 20px;
+                    background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
+                    border: none;
+                    border-radius: 10px;
+                    color: white;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    transition: transform 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-book-quran" style="font-size: 1.5rem;"></i>
+                    <span>القرآن</span>
+                </button>
+                
+                <button onclick="addItem('math'); this.closest('.modal').remove()" style="
+                    padding: 20px;
+                    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+                    border: none;
+                    border-radius: 10px;
+                    color: white;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    transition: transform 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-calculator" style="font-size: 1.5rem;"></i>
+                    <span>الرياضيات</span>
+                </button>
+                
+                <button onclick="addItem('science'); this.closest('.modal').remove()" style="
+                    padding: 20px;
+                    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+                    border: none;
+                    border-radius: 10px;
+                    color: white;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    transition: transform 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-flask" style="font-size: 1.5rem;"></i>
+                    <span>العلوم</span>
+                </button>
+                
+                <button onclick="addItem('activities'); this.closest('.modal').remove()" style="
+                    padding: 20px;
+                    background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+                    border: none;
+                    border-radius: 10px;
+                    color: white;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 10px;
+                    transition: transform 0.3s;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-chalkboard-teacher" style="font-size: 1.5rem;"></i>
+                    <span>النشاطات</span>
+                </button>
+            </div>
+            <button onclick="this.closest('.modal').remove()" style="
+                padding: 12px 30px;
+                background: #f1f3f5;
+                border: none;
+                border-radius: 8px;
+                color: #666;
+                cursor: pointer;
+                font-size: 1rem;
+                transition: background 0.3s;
+            " onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f1f3f5'">
+                إلغاء
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
 // جعل الدوال متاحة عالمياً
 window.switchTab = switchTab;
 window.addItem = addItem;
@@ -752,5 +925,6 @@ window.deleteItem = deleteItem;
 window.viewImage = viewImage;
 window.printPortfolio = printPortfolio;
 window.openUploadWidget = openUploadWidget;
+window.showAddModal = showAddModal;
 
-console.log('🎉 النظام جاهز بدون تسجيل دخول!');
+console.log('🎉 النظام جاهز! الصور في Cloudinary والنصوص في Firebase');

@@ -68,30 +68,26 @@ async function loadPortfolioData() {
         const docSnap = await docRef.get();
         
         if (docSnap.exists) {
-            portfolioData = docSnap.data();
+            const data = docSnap.data();
+            console.log('📊 البيانات الخام من Firebase:', data);
+            
+            // تأكد من أن البيانات في التنسيق الصحيح
+            portfolioData = {
+                arabic: Array.isArray(data.arabic) ? data.arabic : [],
+                english: Array.isArray(data.english) ? data.english : [],
+                quran: Array.isArray(data.quran) ? data.quran : [],
+                math: Array.isArray(data.math) ? data.math : [],
+                science: Array.isArray(data.science) ? data.science : [],
+                activities: Array.isArray(data.activities) ? data.activities : [],
+                createdAt: data.createdAt || new Date().toISOString(),
+                updatedAt: data.updatedAt || new Date().toISOString()
+            };
+            
             console.log('✅ تم تحميل البيانات النصية من Firebase:', portfolioData);
             showToast('تم تحميل البيانات بنجاح', 'success');
         } else {
             // إنشاء وثيقة جديدة
-            await docRef.set({
-                arabic: [],
-                english: [],
-                quran: [],
-                math: [],
-                science: [],
-                activities: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            });
-            console.log('📝 تم إنشاء ملف جديد في Firebase');
-            portfolioData = {
-                arabic: [],
-                english: [],
-                quran: [],
-                math: [],
-                science: [],
-                activities: []
-            };
+            await initializeNewPortfolio();
         }
         
     } catch (error) {
@@ -100,13 +96,53 @@ async function loadPortfolioData() {
     }
 }
 
+// تهيئة ملف إنجاز جديد
+async function initializeNewPortfolio() {
+    console.log('📝 إنشاء ملف إنجاز جديد...');
+    
+    try {
+        const initialData = {
+            arabic: [],
+            english: [],
+            quran: [],
+            math: [],
+            science: [],
+            activities: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        await db.collection('portfolio').doc('data').set(initialData);
+        portfolioData = initialData;
+        
+        console.log('✅ تم إنشاء ملف جديد في Firebase');
+        showToast('تم إنشاء ملف إنجاز جديد', 'info');
+        
+    } catch (error) {
+        console.error('❌ خطأ في إنشاء الملف:', error);
+        throw error;
+    }
+}
+
 // حفظ البيانات في Firebase (النصوص فقط)
 async function savePortfolioData() {
     try {
-        await db.collection('portfolio').doc('data').set({
-            ...portfolioData,
+        const saveData = {
+            arabic: portfolioData.arabic || [],
+            english: portfolioData.english || [],
+            quran: portfolioData.quran || [],
+            math: portfolioData.math || [],
+            science: portfolioData.science || [],
+            activities: portfolioData.activities || [],
             updatedAt: new Date().toISOString()
-        }, { merge: true });
+        };
+        
+        // الحفاظ على تاريخ الإنشاء إذا كان موجوداً
+        if (portfolioData.createdAt) {
+            saveData.createdAt = portfolioData.createdAt;
+        }
+        
+        await db.collection('portfolio').doc('data').set(saveData, { merge: true });
         
         console.log('✅ تم حفظ البيانات النصية في Firebase');
         return true;
@@ -121,34 +157,55 @@ async function savePortfolioData() {
 function updateDashboard() {
     console.log('📊 تحديث لوحة التحكم...');
     
-    // حساب الإحصائيات
-    const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
-    const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
-        sum + arr.reduce((imgSum, item) => imgSum + (item.images ? item.images.length : 0), 0), 0);
-    
-    const thisMonth = new Date().getMonth();
-    const thisYear = new Date().getFullYear();
-    const recentItems = Object.values(portfolioData).reduce((sum, arr) => 
-        sum + arr.filter(item => {
-            const itemDate = new Date(item.timestamp || Date.now());
-            return itemDate.getMonth() === thisMonth && itemDate.getFullYear() === thisYear;
-        }).length, 0);
-    
-    // تحديث DOM
-    document.getElementById('totalItems').textContent = totalItems;
-    document.getElementById('totalImages').textContent = totalImages;
-    document.getElementById('recentItems').textContent = recentItems;
-    
-    const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 100) * 100)) : 0;
-    document.getElementById('completionRate').textContent = `${completionRate}%`;
-    
-    // تحديث العناصر الحديثة
-    updateRecentItems();
-    
-    // تحديث كل قسم
-    Object.keys(portfolioData).forEach(subject => {
-        updateSection(subject);
-    });
+    try {
+        // حساب الإحصائيات بشكل آمن
+        const subjects = ['arabic', 'english', 'quran', 'math', 'science', 'activities'];
+        let totalItems = 0;
+        let totalImages = 0;
+        let recentItems = 0;
+        
+        const thisMonth = new Date().getMonth();
+        const thisYear = new Date().getFullYear();
+        
+        subjects.forEach(subject => {
+            const items = portfolioData[subject];
+            if (Array.isArray(items)) {
+                totalItems += items.length;
+                
+                items.forEach(item => {
+                    // حساب عدد الصور
+                    if (item.images && Array.isArray(item.images)) {
+                        totalImages += item.images.length;
+                    }
+                    
+                    // حساب العناصر الحديثة
+                    const itemDate = new Date(item.timestamp || Date.now());
+                    if (itemDate.getMonth() === thisMonth && itemDate.getFullYear() === thisYear) {
+                        recentItems++;
+                    }
+                });
+            }
+        });
+        
+        // تحديث DOM
+        document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('totalImages').textContent = totalImages;
+        document.getElementById('recentItems').textContent = recentItems;
+        
+        const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 100) * 100)) : 0;
+        document.getElementById('completionRate').textContent = `${completionRate}%`;
+        
+        // تحديث العناصر الحديثة
+        updateRecentItems();
+        
+        // تحديث كل قسم
+        subjects.forEach(subject => {
+            updateSection(subject);
+        });
+        
+    } catch (error) {
+        console.error('❌ خطأ في تحديث لوحة التحكم:', error);
+    }
 }
 
 // تحديث العناصر الحديثة
@@ -156,63 +213,85 @@ function updateRecentItems() {
     const container = document.getElementById('recentItemsGrid');
     if (!container) return;
     
-    // جمع جميع العناصر
-    const allItems = [];
-    Object.keys(portfolioData).forEach(subject => {
-        portfolioData[subject].forEach(item => {
-            allItems.push({
-                ...item,
-                subject: subject
-            });
+    try {
+        // جمع جميع العناصر
+        const allItems = [];
+        const subjects = ['arabic', 'english', 'quran', 'math', 'science', 'activities'];
+        
+        subjects.forEach(subject => {
+            const items = portfolioData[subject];
+            if (Array.isArray(items)) {
+                items.forEach(item => {
+                    allItems.push({
+                        ...item,
+                        subject: subject
+                    });
+                });
+            }
         });
-    });
-    
-    // ترتيب حسب التاريخ (الأحدث أولاً)
-    allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    
-    // أخذ 6 عناصر فقط
-    const recentItems = allItems.slice(0, 6);
-    
-    // مسح المحتوى القديم
-    container.innerHTML = '';
-    
-    if (recentItems.length === 0) {
+        
+        // ترتيب حسب التاريخ (الأحدث أولاً)
+        allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        // أخذ 6 عناصر فقط
+        const recentItems = allItems.slice(0, 6);
+        
+        // مسح المحتوى القديم
+        container.innerHTML = '';
+        
+        if (recentItems.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h3>لا توجد عناصر حديثة</h3>
+                    <p>ابدأ بإضافة عناصر جديدة إلى ملف الإنجاز</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // إضافة العناصر الحديثة
+        recentItems.forEach(item => {
+            const card = createItemCard(item, item.subject);
+            container.appendChild(card);
+        });
+        
+    } catch (error) {
+        console.error('❌ خطأ في تحديث العناصر الحديثة:', error);
         container.innerHTML = `
             <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                <h3>لا توجد عناصر حديثة</h3>
-                <p>ابدأ بإضافة عناصر جديدة إلى ملف الإنجاز</p>
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>خطأ في تحميل البيانات</h3>
+                <p>حدث خطأ في تحميل العناصر الحديثة</p>
             </div>
         `;
-        return;
     }
-    
-    // إضافة العناصر الحديثة
-    recentItems.forEach(item => {
-        const card = createItemCard(item, item.subject);
-        container.appendChild(card);
-    });
 }
 
 // تبديل التبويب
 function switchTab(tabId) {
     console.log(`🔄 تبديل إلى التبويب: ${tabId}`);
     
-    // تحديث التبويبات النشطة
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.getAttribute('data-tab') === tabId) {
-            tab.classList.add('active');
-        }
-    });
-    
-    // تحديث المحتوى
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-        if (content.id === tabId) {
-            content.classList.add('active');
-        }
-    });
+    try {
+        // تحديث التبويبات النشطة
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-tab') === tabId) {
+                tab.classList.add('active');
+            }
+        });
+        
+        // تحديث المحتوى
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+            if (content.id === tabId) {
+                content.classList.add('active');
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ خطأ في تبديل التبويب:', error);
+    }
 }
 
 // تحديث قسم معين
@@ -220,68 +299,88 @@ function updateSection(subject) {
     const container = document.getElementById(`${subject}Items`);
     if (!container) return;
     
-    const items = portfolioData[subject] || [];
-    
-    // مسح المحتوى القديم
-    container.innerHTML = '';
-    
-    if (items.length === 0) {
+    try {
+        const items = portfolioData[subject];
+        const validItems = Array.isArray(items) ? items : [];
+        
+        // مسح المحتوى القديم
+        container.innerHTML = '';
+        
+        if (validItems.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="${getSubjectIcon(subject)}"></i>
+                    <h3>لا توجد عناصر</h3>
+                    <p>لم يتم إضافة أي عناصر إلى هذا القسم بعد</p>
+                    <button class="btn btn-primary" onclick="addItem('${subject}')">
+                        <i class="fas fa-plus"></i> إضافة أول عنصر
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        // ترتيب العناصر (الأحدث أولاً)
+        const sortedItems = [...validItems].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        // إضافة العناصر
+        sortedItems.forEach(item => {
+            try {
+                const card = createItemCard(item, subject);
+                container.appendChild(card);
+            } catch (cardError) {
+                console.error('❌ خطأ في إنشاء بطاقة العنصر:', cardError);
+            }
+        });
+        
+    } catch (error) {
+        console.error(`❌ خطأ في تحديث قسم ${subject}:`, error);
         container.innerHTML = `
             <div class="empty-state">
-                <i class="${getSubjectIcon(subject)}"></i>
-                <h3>لا توجد عناصر</h3>
-                <p>لم يتم إضافة أي عناصر إلى هذا القسم بعد</p>
-                <button class="btn btn-primary" onclick="addItem('${subject}')">
-                    <i class="fas fa-plus"></i> إضافة أول عنصر
-                </button>
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>خطأ في تحميل القسم</h3>
+                <p>حدث خطأ في تحميل بيانات هذا القسم</p>
             </div>
         `;
-        return;
     }
-    
-    // ترتيب العناصر (الأحدث أولاً)
-    items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    
-    // إضافة العناصر
-    items.forEach(item => {
-        const card = createItemCard(item, subject);
-        container.appendChild(card);
-    });
 }
 
 // إنشاء بطاقة عنصر
 function createItemCard(item, subject) {
     const card = document.createElement('div');
     card.className = 'item-card';
-    card.dataset.id = item.id;
+    card.dataset.id = item.id || item._id || Date.now().toString();
     
     const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
     const date = item.date || formatDate(new Date(item.timestamp || Date.now()));
+    const description = item.description || 'لا يوجد وصف';
     
-    // استخدام صور افتراضية إذا كانت الصور فارغة
-    const image1 = item.images && item.images[0] ? item.images[0] : getDefaultImage(subject, 1);
-    const image2 = item.images && item.images[1] ? item.images[1] : getDefaultImage(subject, 2);
+    // استخدام صور آمنة
+    const image1 = getSafeImageUrl(item.images, 0, subject);
+    const image2 = getSafeImageUrl(item.images, 1, subject);
+    
+    const itemId = item.id || item._id || Date.now().toString();
     
     card.innerHTML = `
         <div class="item-header">
-            <div class="item-title">${title}</div>
-            <div class="item-date">${date}</div>
+            <div class="item-title">${escapeHtml(title)}</div>
+            <div class="item-date">${escapeHtml(date)}</div>
         </div>
         <div class="item-body">
-            <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
+            <div class="item-description">${escapeHtml(description)}</div>
             <div class="item-images">
-                <div class="item-image" onclick="viewImage('${image1}')">
-                    <img src="${image1}" alt="الصورة الأولى" onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
+                <div class="item-image" onclick="viewImage('${escapeHtml(image1)}')">
+                    <img src="${escapeHtml(image1)}" alt="الصورة الأولى" onerror="handleImageError(this, '${subject}', 1)">
                 </div>
-                <div class="item-image" onclick="viewImage('${image2}')">
-                    <img src="${image2}" alt="الصورة الثانية" onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
+                <div class="item-image" onclick="viewImage('${escapeHtml(image2)}')">
+                    <img src="${escapeHtml(image2)}" alt="الصورة الثانية" onerror="handleImageError(this, '${subject}', 2)">
                 </div>
             </div>
             <div class="item-actions">
-                <button class="action-btn edit" onclick="editItem('${subject}', '${item.id}')">
+                <button class="action-btn edit" onclick="editItem('${escapeHtml(subject)}', '${escapeHtml(itemId)}')">
                     <i class="fas fa-edit"></i> تعديل
                 </button>
-                <button class="action-btn delete" onclick="deleteItem('${subject}', '${item.id}')">
+                <button class="action-btn delete" onclick="deleteItem('${escapeHtml(subject)}', '${escapeHtml(itemId)}')">
                     <i class="fas fa-trash"></i> حذف
                 </button>
             </div>
@@ -291,37 +390,65 @@ function createItemCard(item, subject) {
     return card;
 }
 
+// الحصول على رابط صورة آمن
+function getSafeImageUrl(images, index, subject) {
+    if (!images || !Array.isArray(images) || !images[index]) {
+        return getDefaultImage(subject, index + 1);
+    }
+    
+    const url = images[index];
+    
+    // التحقق من أن الرابط يبدأ بـ https
+    if (url.startsWith('http')) {
+        return url;
+    }
+    
+    // إذا كان الرابط من Cloudinary، تأكد من أنه https
+    if (url.includes('cloudinary.com')) {
+        return url.replace('http://', 'https://');
+    }
+    
+    return getDefaultImage(subject, index + 1);
+}
+
+// معالجة خطأ الصور
+function handleImageError(imgElement, subject, index) {
+    imgElement.src = getDefaultImage(subject, index);
+    imgElement.style.objectFit = 'contain';
+    imgElement.style.background = '#f8f9fa';
+}
+
 // الحصول على صورة افتراضية حسب القسم
 function getDefaultImage(subject, index) {
     const defaultImages = {
         arabic: [
-            'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&q=80',
-            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&q=80'
+            'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=400&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop&q=80'
         ],
         english: [
-            'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&q=80',
-            'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&q=80'
+            'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=400&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop&q=80'
         ],
         quran: [
-            'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&q=80',
-            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80'
+            'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=300&fit=crop&q=80'
         ],
         math: [
-            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&q=80',
-            'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?w=400&q=80'
+            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1596495578065-6e0763fa1178?w=400&h=300&fit=crop&q=80'
         ],
         science: [
-            'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&q=80',
-            'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400&q=80'
+            'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400&h=300&fit=crop&q=80'
         ],
         activities: [
-            'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&q=80',
-            'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&q=80'
+            'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&h=300&fit=crop&q=80'
         ]
     };
     
     return defaultImages[subject] ? defaultImages[subject][index - 1] : 
-           'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80';
+           'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&h=300&fit=crop&q=80';
 }
 
 // الحصول على أيقونة المادة
@@ -342,7 +469,7 @@ function openUploadWidget(inputId) {
     const myWidget = cloudinary.createUploadWidget({
         cloudName: CLOUDINARY_CONFIG.cloudName,
         uploadPreset: CLOUDINARY_CONFIG.uploadPreset,
-        sources: ['local', 'url', 'camera'],
+        sources: ['local', 'url'],
         multiple: false,
         maxFiles: 1,
         clientAllowedFormats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
@@ -365,13 +492,6 @@ function openUploadWidget(inputId) {
             previewDiv.innerHTML = `<img src="${secureUrl}" alt="الصورة المرفوعة" style="max-width:100%; max-height:200px; object-fit:contain;">`;
             
             showToast('تم رفع الصورة إلى Cloudinary بنجاح', 'success');
-            
-            // حفظ الصورة مؤقتاً للاستخدام
-            if (inputId === 'image1') {
-                window.tempImage1Url = secureUrl;
-            } else if (inputId === 'image2') {
-                window.tempImage2Url = secureUrl;
-            }
             
         } else if (error) {
             console.error('❌ خطأ في رفع الصورة إلى Cloudinary:', error);
@@ -478,7 +598,7 @@ async function saveItem() {
         if (image2Url) item.images.push(image2Url);
         
         // تأكد من وجود المصفوفة
-        if (!portfolioData[subject] || !Array.isArray(portfolioData[subject])) {
+        if (!Array.isArray(portfolioData[subject])) {
             portfolioData[subject] = [];
         }
         
@@ -520,7 +640,7 @@ function editItem(subject, itemId) {
     console.log(`✏️ تعديل العنصر: ${itemId}`);
     
     const items = portfolioData[subject];
-    if (!items || !Array.isArray(items)) return;
+    if (!Array.isArray(items)) return;
     
     const item = items.find(i => i.id === itemId);
     if (!item) return;
@@ -541,7 +661,7 @@ function editItem(subject, itemId) {
     
     if (item.images && item.images[0]) {
         document.getElementById('image1Url').value = item.images[0];
-        preview1.innerHTML = `<img src="${item.images[0]}" alt="الصورة الحالية" style="max-width:100%; max-height:200px; object-fit:contain;">`;
+        preview1.innerHTML = `<img src="${escapeHtml(item.images[0])}" alt="الصورة الحالية" style="max-width:100%; max-height:200px; object-fit:contain;">`;
     } else {
         preview1.innerHTML = `
             <div class="upload-placeholder" onclick="openUploadWidget('image1')">
@@ -553,7 +673,7 @@ function editItem(subject, itemId) {
     
     if (item.images && item.images[1]) {
         document.getElementById('image2Url').value = item.images[1];
-        preview2.innerHTML = `<img src="${item.images[1]}" alt="الصورة الحالية" style="max-width:100%; max-height:200px; object-fit:contain;">`;
+        preview2.innerHTML = `<img src="${escapeHtml(item.images[1])}" alt="الصورة الحالية" style="max-width:100%; max-height:200px; object-fit:contain;">`;
     } else {
         preview2.innerHTML = `
             <div class="upload-placeholder" onclick="openUploadWidget('image2')">
@@ -579,7 +699,7 @@ async function deleteItem(subject, itemId) {
         showToast('جارٍ حذف العنصر...', 'info');
         
         // حذف من البيانات المحلية
-        if (portfolioData[subject] && Array.isArray(portfolioData[subject])) {
+        if (Array.isArray(portfolioData[subject])) {
             portfolioData[subject] = portfolioData[subject].filter(item => item.id !== itemId);
             
             // حفظ في Firebase
@@ -602,7 +722,7 @@ async function deleteItem(subject, itemId) {
 function viewImage(url) {
     if (!url) return;
     
-    document.getElementById('modalImageView').src = url;
+    document.getElementById('modalImageView').src = escapeHtml(url);
     document.getElementById('imageModal').style.display = 'flex';
 }
 
@@ -625,293 +745,321 @@ function closeImageModal() {
 function printPortfolio() {
     console.log('🖨️ جاري تحضير الطباعة...');
     
-    // إنشاء محتوى للطباعة
-    let printContent = `
-        <html dir="rtl">
-        <head>
-            <title>ملف إنجاز المعلمة فريال الغماري</title>
-            <style>
-                body { font-family: 'Tajawal', sans-serif; padding: 20px; }
-                .print-header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #333; padding-bottom: 20px; }
-                .print-section { margin-bottom: 40px; page-break-inside: avoid; }
-                .print-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
-                .print-images { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-                .print-images img { max-width: 200px; max-height: 150px; object-fit: cover; border: 1px solid #ddd; }
-                @page { margin: 2cm; }
-                @media print {
-                    .no-print { display: none; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="print-header">
-                <h1>ملف إنجاز المعلمة</h1>
-                <h2>فريال عبدالله الغماري</h2>
-                <p>ابتدائية النخبة - العام الدراسي ١٤٤٥-١٤٤٦ هـ</p>
-                <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
-            </div>
-    `;
-    
-    // إضافة كل قسم
-    Object.keys(portfolioData).forEach(subject => {
-        const items = portfolioData[subject];
-        if (items && items.length > 0) {
-            const subjectNames = {
-                arabic: 'اللغة العربية',
-                english: 'اللغة الإنجليزية',
-                quran: 'القرآن الكريم',
-                math: 'الرياضيات',
-                science: 'العلوم',
-                activities: 'النشاطات المدرسية'
-            };
-            
-            printContent += `
-                <div class="print-section">
-                    <h3 style="color: #4361ee; border-bottom: 2px solid #4361ee; padding-bottom: 10px;">
-                        ${subjectNames[subject]}
-                    </h3>
-            `;
-            
-            items.forEach(item => {
-                const title = item.letter || item.surah || item.concept || item.title || 'عنصر';
+    try {
+        // إنشاء محتوى للطباعة
+        let printContent = `
+            <html dir="rtl">
+            <head>
+                <title>ملف إنجاز المعلمة فريال الغماري</title>
+                <style>
+                    body { font-family: 'Tajawal', sans-serif; padding: 20px; }
+                    .print-header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #333; padding-bottom: 20px; }
+                    .print-section { margin-bottom: 40px; page-break-inside: avoid; }
+                    .print-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
+                    .print-images { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+                    .print-images img { max-width: 200px; max-height: 150px; object-fit: cover; border: 1px solid #ddd; }
+                    @page { margin: 2cm; }
+                    @media print {
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-header">
+                    <h1>ملف إنجاز المعلمة</h1>
+                    <h2>فريال عبدالله الغماري</h2>
+                    <p>ابتدائية النخبة - العام الدراسي ١٤٤٥-١٤٤٦ هـ</p>
+                    <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
+                </div>
+        `;
+        
+        // إضافة كل قسم
+        const subjects = ['arabic', 'english', 'quran', 'math', 'science', 'activities'];
+        const subjectNames = {
+            arabic: 'اللغة العربية',
+            english: 'اللغة الإنجليزية',
+            quran: 'القرآن الكريم',
+            math: 'الرياضيات',
+            science: 'العلوم',
+            activities: 'النشاطات المدرسية'
+        };
+        
+        subjects.forEach(subject => {
+            const items = portfolioData[subject];
+            if (Array.isArray(items) && items.length > 0) {
                 printContent += `
-                    <div class="print-item">
-                        <h4>${title}</h4>
-                        <p><strong>التاريخ:</strong> ${item.date || 'غير محدد'}</p>
-                        <p><strong>الوصف:</strong> ${item.description || 'لا يوجد وصف'}</p>
-                        ${item.images && item.images.length > 0 ? `
-                            <div class="print-images">
-                                ${item.images.map((img, index) => 
-                                    `<img src="${img}" alt="الصورة ${index + 1}" onerror="this.style.display='none'">`
-                                ).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
+                    <div class="print-section">
+                        <h3 style="color: #4361ee; border-bottom: 2px solid #4361ee; padding-bottom: 10px;">
+                            ${subjectNames[subject]}
+                        </h3>
                 `;
-            });
-            
-            printContent += `</div>`;
-        }
-    });
-    
-    printContent += `
-            <div class="no-print" style="text-align: center; margin-top: 50px;">
-                <button onclick="window.print()" style="padding: 10px 30px; background: #4361ee; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    طباعة
-                </button>
-                <button onclick="window.close()" style="padding: 10px 30px; background: #666; color: white; border: none; border-radius: 5px; margin-right: 10px; cursor: pointer;">
-                    إغلاق
-                </button>
-            </div>
-        </body>
-        </html>
-    `;
-    
-    // فتح نافذة الطباعة
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    
-    showToast('تم تحضير ملف الطباعة', 'success');
+                
+                items.forEach(item => {
+                    const title = item.letter || item.surah || item.concept || item.title || 'عنصر';
+                    printContent += `
+                        <div class="print-item">
+                            <h4>${escapeHtml(title)}</h4>
+                            <p><strong>التاريخ:</strong> ${item.date || 'غير محدد'}</p>
+                            <p><strong>الوصف:</strong> ${escapeHtml(item.description || 'لا يوجد وصف')}</p>
+                            ${item.images && item.images.length > 0 ? `
+                                <div class="print-images">
+                                    ${item.images.map((img, index) => 
+                                        `<img src="${escapeHtml(img)}" alt="الصورة ${index + 1}" onerror="this.style.display='none'">`
+                                    ).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+                
+                printContent += `</div>`;
+            }
+        });
+        
+        printContent += `
+                <div class="no-print" style="text-align: center; margin-top: 50px;">
+                    <button onclick="window.print()" style="padding: 10px 30px; background: #4361ee; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        طباعة
+                    </button>
+                    <button onclick="window.close()" style="padding: 10px 30px; background: #666; color: white; border: none; border-radius: 5px; margin-right: 10px; cursor: pointer;">
+                        إغلاق
+                    </button>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        // فتح نافذة الطباعة
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        
+        showToast('تم تحضير ملف الطباعة', 'success');
+        
+    } catch (error) {
+        console.error('❌ خطأ في الطباعة:', error);
+        showToast('حدث خطأ في تحضير ملف الطباعة', 'error');
+    }
 }
 
 // تنسيق التاريخ
 function formatDate(date) {
-    return date.toLocaleDateString('ar-SA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    try {
+        return date.toLocaleDateString('ar-SA', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } catch (error) {
+        return new Date().toLocaleDateString('ar-SA');
+    }
 }
 
 // عرض الإشعارات
 function showToast(message, type = 'info') {
-    // إنشاء عنصر الإشعار
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const icons = {
-        success: 'fas fa-check-circle',
-        error: 'fas fa-exclamation-circle',
-        info: 'fas fa-info-circle'
-    };
-    
-    toast.innerHTML = `
-        <i class="${icons[type] || 'fas fa-info-circle'}"></i>
-        <div class="toast-content">
-            <div class="toast-title">${type === 'success' ? 'نجاح' : type === 'error' ? 'خطأ' : 'معلومة'}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-    
-    // إضافة إلى الصفحة
-    document.body.appendChild(toast);
-    
-    // إزالته تلقائياً بعد 5 ثوانٍ
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 5000);
+    try {
+        // إنشاء عنصر الإشعار
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icons = {
+            success: 'fas fa-check-circle',
+            error: 'fas fa-exclamation-circle',
+            info: 'fas fa-info-circle'
+        };
+        
+        toast.innerHTML = `
+            <i class="${icons[type] || 'fas fa-info-circle'}"></i>
+            <div class="toast-content">
+                <div class="toast-title">${type === 'success' ? 'نجاح' : type === 'error' ? 'خطأ' : 'معلومة'}</div>
+                <div class="toast-message">${escapeHtml(message)}</div>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        // إضافة إلى الصفحة
+        document.body.appendChild(toast);
+        
+        // إزالته تلقائياً بعد 5 ثوانٍ
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 5000);
+    } catch (error) {
+        console.error('❌ خطأ في عرض الإشعار:', error);
+    }
+}
+
+// تهريب HTML لمنع XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // إظهار نافذة إضافة جديد
 function showAddModal() {
-    // عرض اختيار القسم
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-        backdrop-filter: blur(5px);
-    `;
-    
-    modal.innerHTML = `
-        <div style="
-            background: white;
-            border-radius: 15px;
-            padding: 40px;
-            max-width: 600px;
-            width: 90%;
-            text-align: center;
-        ">
-            <h3 style="margin-bottom: 30px; color: #333; font-size: 1.5rem;">اختر القسم للإضافة</h3>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px;">
-                <button onclick="addItem('arabic'); this.closest('.modal').remove()" style="
-                    padding: 20px;
-                    background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+    try {
+        // عرض اختيار القسم
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        `;
+        
+        modal.innerHTML = `
+            <div style="
+                background: white;
+                border-radius: 15px;
+                padding: 40px;
+                max-width: 600px;
+                width: 90%;
+                text-align: center;
+            ">
+                <h3 style="margin-bottom: 30px; color: #333; font-size: 1.5rem;">اختر القسم للإضافة</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px;">
+                    <button onclick="addItem('arabic'); this.closest('.modal').remove()" style="
+                        padding: 20px;
+                        background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+                        border: none;
+                        border-radius: 10px;
+                        color: white;
+                        font-size: 1rem;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 10px;
+                        transition: transform 0.3s;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-book" style="font-size: 1.5rem;"></i>
+                        <span>العربية</span>
+                    </button>
+                    
+                    <button onclick="addItem('english'); this.closest('.modal').remove()" style="
+                        padding: 20px;
+                        background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+                        border: none;
+                        border-radius: 10px;
+                        color: white;
+                        font-size: 1rem;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 10px;
+                        transition: transform 0.3s;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-language" style="font-size: 1.5rem;"></i>
+                        <span>الإنجليزية</span>
+                    </button>
+                    
+                    <button onclick="addItem('quran'); this.closest('.modal').remove()" style="
+                        padding: 20px;
+                        background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
+                        border: none;
+                        border-radius: 10px;
+                        color: white;
+                        font-size: 1rem;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 10px;
+                        transition: transform 0.3s;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-book-quran" style="font-size: 1.5rem;"></i>
+                        <span>القرآن</span>
+                    </button>
+                    
+                    <button onclick="addItem('math'); this.closest('.modal').remove()" style="
+                        padding: 20px;
+                        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+                        border: none;
+                        border-radius: 10px;
+                        color: white;
+                        font-size: 1rem;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 10px;
+                        transition: transform 0.3s;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-calculator" style="font-size: 1.5rem;"></i>
+                        <span>الرياضيات</span>
+                    </button>
+                    
+                    <button onclick="addItem('science'); this.closest('.modal').remove()" style="
+                        padding: 20px;
+                        background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+                        border: none;
+                        border-radius: 10px;
+                        color: white;
+                        font-size: 1rem;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 10px;
+                        transition: transform 0.3s;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-flask" style="font-size: 1.5rem;"></i>
+                        <span>العلوم</span>
+                    </button>
+                    
+                    <button onclick="addItem('activities'); this.closest('.modal').remove()" style="
+                        padding: 20px;
+                        background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+                        border: none;
+                        border-radius: 10px;
+                        color: white;
+                        font-size: 1rem;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 10px;
+                        transition: transform 0.3s;
+                    " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fas fa-chalkboard-teacher" style="font-size: 1.5rem;"></i>
+                        <span>النشاطات</span>
+                    </button>
+                </div>
+                <button onclick="this.closest('.modal').remove()" style="
+                    padding: 12px 30px;
+                    background: #f1f3f5;
                     border: none;
-                    border-radius: 10px;
-                    color: white;
-                    font-size: 1rem;
+                    border-radius: 8px;
+                    color: #666;
                     cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 10px;
-                    transition: transform 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <i class="fas fa-book" style="font-size: 1.5rem;"></i>
-                    <span>العربية</span>
-                </button>
-                
-                <button onclick="addItem('english'); this.closest('.modal').remove()" style="
-                    padding: 20px;
-                    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
-                    border: none;
-                    border-radius: 10px;
-                    color: white;
                     font-size: 1rem;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 10px;
-                    transition: transform 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <i class="fas fa-language" style="font-size: 1.5rem;"></i>
-                    <span>الإنجليزية</span>
-                </button>
-                
-                <button onclick="addItem('quran'); this.closest('.modal').remove()" style="
-                    padding: 20px;
-                    background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
-                    border: none;
-                    border-radius: 10px;
-                    color: white;
-                    font-size: 1rem;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 10px;
-                    transition: transform 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <i class="fas fa-book-quran" style="font-size: 1.5rem;"></i>
-                    <span>القرآن</span>
-                </button>
-                
-                <button onclick="addItem('math'); this.closest('.modal').remove()" style="
-                    padding: 20px;
-                    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-                    border: none;
-                    border-radius: 10px;
-                    color: white;
-                    font-size: 1rem;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 10px;
-                    transition: transform 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <i class="fas fa-calculator" style="font-size: 1.5rem;"></i>
-                    <span>الرياضيات</span>
-                </button>
-                
-                <button onclick="addItem('science'); this.closest('.modal').remove()" style="
-                    padding: 20px;
-                    background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
-                    border: none;
-                    border-radius: 10px;
-                    color: white;
-                    font-size: 1rem;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 10px;
-                    transition: transform 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <i class="fas fa-flask" style="font-size: 1.5rem;"></i>
-                    <span>العلوم</span>
-                </button>
-                
-                <button onclick="addItem('activities'); this.closest('.modal').remove()" style="
-                    padding: 20px;
-                    background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
-                    border: none;
-                    border-radius: 10px;
-                    color: white;
-                    font-size: 1rem;
-                    cursor: pointer;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 10px;
-                    transition: transform 0.3s;
-                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    <i class="fas fa-chalkboard-teacher" style="font-size: 1.5rem;"></i>
-                    <span>النشاطات</span>
+                    transition: background 0.3s;
+                " onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f1f3f5'">
+                    إلغاء
                 </button>
             </div>
-            <button onclick="this.closest('.modal').remove()" style="
-                padding: 12px 30px;
-                background: #f1f3f5;
-                border: none;
-                border-radius: 8px;
-                color: #666;
-                cursor: pointer;
-                font-size: 1rem;
-                transition: background 0.3s;
-            " onmouseover="this.style.background='#e9ecef'" onmouseout="this.style.background='#f1f3f5'">
-                إلغاء
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
+        `;
+        
+        document.body.appendChild(modal);
+    } catch (error) {
+        console.error('❌ خطأ في عرض نافذة الإضافة:', error);
+        showToast('حدث خطأ في عرض نافذة الإضافة', 'error');
+    }
 }
 
 // جعل الدوال متاحة عالمياً
@@ -926,5 +1074,6 @@ window.viewImage = viewImage;
 window.printPortfolio = printPortfolio;
 window.openUploadWidget = openUploadWidget;
 window.showAddModal = showAddModal;
+window.handleImageError = handleImageError;
 
 console.log('🎉 النظام جاهز! الصور في Cloudinary والنصوص في Firebase');

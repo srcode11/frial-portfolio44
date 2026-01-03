@@ -5,20 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ملف إنجاز المعلمة فريال الغماري</title>
     
-    <!-- Font Awesome - نسخة محسنة -->
+    <!-- Font Awesome مع CDN بديل -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
           crossorigin="anonymous" referrerpolicy="no-referrer">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDKs -->
-    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase SDKs مع integrity -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js" defer></script>
     
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* تحسين Font Awesome إذا تم حجبه */
+        .fa, .fas, .far, .fal, .fab {
+            font-family: 'Font Awesome 6 Free' !important;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -36,9 +44,16 @@
                     <button class="btn btn-primary" onclick="showSubjectSelection()">
                         <i class="fas fa-plus"></i> إضافة جديد
                     </button>
-                    <button class="btn btn-secondary" onclick="cleanupLocalStorage()" title="تنظيف التخزين المحلي">
-                        <i class="fas fa-broom"></i> تنظيف
+                    <button class="btn btn-secondary" onclick="syncWithFirebase()" title="مزامنة مع السحابة">
+                        <i class="fas fa-cloud-upload-alt"></i> مزامنة
                     </button>
+                    <button class="btn btn-secondary" onclick="exportData()" title="تصدير البيانات">
+                        <i class="fas fa-download"></i> تصدير
+                    </button>
+                    <label class="btn btn-secondary" style="cursor: pointer;">
+                        <i class="fas fa-upload"></i> استيراد
+                        <input type="file" accept=".json" onchange="importData(event)" style="display: none;">
+                    </label>
                     <button class="btn btn-secondary" onclick="printPortfolio()">
                         <i class="fas fa-print"></i> طباعة
                     </button>
@@ -150,9 +165,14 @@
                             <p>حروف وأنشطة اللغة العربية</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('arabic')">
-                        <i class="fas fa-plus"></i> إضافة حرف
-                    </button>
+                    <div>
+                        <button class="btn btn-primary" onclick="addItem('arabic')" style="margin-left: 10px;">
+                            <i class="fas fa-plus"></i> إضافة حرف
+                        </button>
+                        <button class="btn btn-warning" onclick="clearSectionData('arabic')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
+                            <i class="fas fa-trash-alt"></i> تنظيف القسم
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Arabic Items Grid -->
@@ -180,9 +200,14 @@
                             <p>كلمات وأنشطة اللغة الإنجليزية</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('english')">
-                        <i class="fas fa-plus"></i> إضافة كلمة
-                    </button>
+                    <div>
+                        <button class="btn btn-primary" onclick="addItem('english')" style="margin-left: 10px;">
+                            <i class="fas fa-plus"></i> إضافة كلمة
+                        </button>
+                        <button class="btn btn-warning" onclick="clearSectionData('english')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
+                            <i class="fas fa-trash-alt"></i> تنظيف القسم
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="items-grid" id="englishItems">
@@ -206,9 +231,14 @@
                             <p>سور وأنشطة القرآن الكريم</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('quran')">
-                        <i class="fas fa-plus"></i> إضافة سورة
-                    </button>
+                    <div>
+                        <button class="btn btn-primary" onclick="addItem('quran')" style="margin-left: 10px;">
+                            <i class="fas fa-plus"></i> إضافة سورة
+                        </button>
+                        <button class="btn btn-warning" onclick="clearSectionData('quran')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
+                            <i class="fas fa-trash-alt"></i> تنظيف القسم
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="items-grid" id="quranItems">
@@ -232,9 +262,14 @@
                             <p>مفاهيم وأنشطة الرياضيات</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('math')">
-                        <i class="fas fa-plus"></i> إضافة مفهوم
-                    </button>
+                    <div>
+                        <button class="btn btn-primary" onclick="addItem('math')" style="margin-left: 10px;">
+                            <i class="fas fa-plus"></i> إضافة مفهوم
+                        </button>
+                        <button class="btn btn-warning" onclick="clearSectionData('math')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
+                            <i class="fas fa-trash-alt"></i> تنظيف القسم
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="items-grid" id="mathItems">
@@ -258,9 +293,14 @@
                             <p>تجارب وأنشطة العلوم</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('science')">
-                        <i class="fas fa-plus"></i> إضافة تجربة
-                    </button>
+                    <div>
+                        <button class="btn btn-primary" onclick="addItem('science')" style="margin-left: 10px;">
+                            <i class="fas fa-plus"></i> إضافة تجربة
+                        </button>
+                        <button class="btn btn-warning" onclick="clearSectionData('science')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
+                            <i class="fas fa-trash-alt"></i> تنظيف القسم
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="items-grid" id="scienceItems">
@@ -284,9 +324,14 @@
                             <p>إنجازات وأنشطة المعلمة</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('activities')">
-                        <i class="fas fa-plus"></i> إضافة نشاط
-                    </button>
+                    <div>
+                        <button class="btn btn-primary" onclick="addItem('activities')" style="margin-left: 10px;">
+                            <i class="fas fa-plus"></i> إضافة نشاط
+                        </button>
+                        <button class="btn btn-warning" onclick="clearSectionData('activities')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
+                            <i class="fas fa-trash-alt"></i> تنظيف القسم
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="items-grid" id="activitiesItems">
@@ -310,8 +355,7 @@
                 </div>
                 <div class="footer-stats">
                     <p>العام الدراسي: ١٤٤٥ - ١٤٤٦ هـ</p>
-                    <p id="connectionStatus">Firebase Cloud + ImgBB</p>
-                    <p id="storageStatus" style="font-size: 0.9rem; color: #adb5bd; margin-top: 5px;"></p>
+                    <p id="connectionStatus">نسخة 3.0 - يعمل بدون إنترنت</p>
                 </div>
             </div>
         </div>
@@ -386,37 +430,79 @@
         </div>
     </div>
 
-    <!-- Firebase Configuration -->
+    <!-- Firebase Configuration - معدل -->
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
-            authDomain: "teacher-portfolio-fryal.firebaseapp.com",
-            projectId: "teacher-portfolio-fryal",
-            storageBucket: "teacher-portfolio-fryal.firebasestorage.app",
-            messagingSenderId: "1054582250352",
-            appId: "1:1054582250352:web:0fbb6f5a8c2763ffcc4db5",
-            measurementId: "G-74HC2DH4YP"
-        };
+        // دالة لتهيئة Firebase بعد تحميل المكتبات
+        function initializeFirebase() {
+            try {
+                // Firebase Configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
+                    authDomain: "teacher-portfolio-fryal.firebaseapp.com",
+                    projectId: "teacher-portfolio-fryal",
+                    storageBucket: "teacher-portfolio-fryal.firebasestorage.app",
+                    messagingSenderId: "1054582250352",
+                    appId: "1:1054582250352:web:0fbb6f5a8c2763ffcc4db5",
+                    measurementId: "G-74HC2DH4YP"
+                };
 
-        // Initialize Firebase
-        try {
-            const app = firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
-            
-            window.firebaseApp = app;
-            window.firebaseDb = db;
-            
-            console.log("✅ Firebase initialized successfully");
-            
-            // اختبار الاتصال
-            db.collection('test').doc('test').get()
-                .then(() => console.log("✅ Firestore connection test passed"))
-                .catch(err => console.log("ℹ️ Firestore test:", err.message));
+                // التحقق من وجود firebase
+                if (typeof firebase === 'undefined') {
+                    console.log("⚠️ مكتبة Firebase لم يتم تحميلها");
+                    return false;
+                }
+
+                // Initialize Firebase
+                const app = firebase.initializeApp(firebaseConfig);
+                const db = firebase.firestore();
+                const storage = firebase.storage();
                 
-        } catch (error) {
-            console.log("⚠️ Firebase initialization error:", error.message);
+                window.firebaseApp = app;
+                window.firebaseDb = db;
+                window.firebaseStorage = storage;
+                
+                console.log("✅ Firebase initialized successfully");
+                return true;
+                
+            } catch (error) {
+                console.log("⚠️ Firebase initialization error:", error.message);
+                return false;
+            }
         }
+
+        // محاولة التهيئة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const firebaseLoaded = initializeFirebase();
+                if (!firebaseLoaded) {
+                    console.log("📴 Firebase غير متوفر، سيعمل التطبيق في الوضع المحلي");
+                    // إنشاء كائن وهمي لتجنب الأخطاء
+                    window.firebaseDb = {
+                        collection: () => ({
+                            doc: () => ({
+                                get: () => Promise.resolve({ exists: false, data: () => null }),
+                                set: () => Promise.resolve(),
+                                delete: () => Promise.resolve()
+                            }),
+                            where: () => ({ 
+                                orderBy: () => ({ 
+                                    limit: () => ({ 
+                                        get: () => Promise.resolve({ empty: true, forEach: () => {} })
+                                    })
+                                })
+                            })
+                        })
+                    };
+                    window.firebaseStorage = {
+                        ref: () => ({
+                            child: () => ({
+                                put: () => Promise.reject('Firebase Storage غير متوفر')
+                            })
+                        })
+                    };
+                }
+            }, 1000); // انتظر ثانية لتحميل المكتبات
+        });
     </script>
 
     <!-- Main Script -->

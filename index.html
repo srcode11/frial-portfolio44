@@ -11,6 +11,12 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
     
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    
     <!-- Cloudinary Upload Widget -->
     <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     
@@ -26,7 +32,7 @@
                     <i class="fas fa-graduation-cap"></i>
                     <div class="logo-text">
                         <h1>ملف إنجاز المعلمة</h1>
-                        <h2>فريال الغماري</h2>
+                        <h2>فريال عبدالله الغماري</h2>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -36,279 +42,316 @@
                     <button class="btn btn-secondary" onclick="printPortfolio()">
                         <i class="fas fa-print"></i> طباعة
                     </button>
+                    <button class="btn btn-secondary" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                    </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Navigation -->
-    <nav class="navigation">
+    <!-- Login Section (يظهر فقط عند عدم التسجيل) -->
+    <section id="loginSection" class="login-section" style="display: none;">
         <div class="container">
-            <div class="nav-tabs">
-                <button class="nav-tab active" data-tab="all">
-                    <i class="fas fa-home"></i> الرئيسية
-                </button>
-                <button class="nav-tab" data-tab="arabic">
-                    <i class="fas fa-book"></i> العربية
-                </button>
-                <button class="nav-tab" data-tab="english">
-                    <i class="fas fa-language"></i> الإنجليزية
-                </button>
-                <button class="nav-tab" data-tab="quran">
-                    <i class="fas fa-book-quran"></i> القرآن
-                </button>
-                <button class="nav-tab" data-tab="math">
-                    <i class="fas fa-calculator"></i> الرياضيات
-                </button>
-                <button class="nav-tab" data-tab="science">
-                    <i class="fas fa-flask"></i> العلوم
-                </button>
-                <button class="nav-tab" data-tab="activities">
-                    <i class="fas fa-chalkboard-teacher"></i> النشاطات
-                </button>
+            <div class="login-container">
+                <div class="login-header">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h2>ملف الإنجاز الرقمي</h2>
+                    <p>المعلمة فريال عبدالله الغماري</p>
+                </div>
+                <div class="login-form">
+                    <h3>تسجيل الدخول</h3>
+                    <div class="form-group">
+                        <label for="loginEmail">البريد الإلكتروني</label>
+                        <input type="email" id="loginEmail" placeholder="أدخل بريدك الإلكتروني" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">كلمة المرور</label>
+                        <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" required>
+                    </div>
+                    <button class="btn btn-primary" onclick="login()">
+                        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                    </button>
+                    <div class="login-info">
+                        <p><i class="fas fa-info-circle"></i> استخدم بيانات حساب Firebase المدير</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
+    </section>
 
-    <!-- Main Content -->
-    <main class="main">
-        <div class="container">
-            <!-- Dashboard -->
-            <section id="all" class="tab-content active">
-                <div class="section-header">
-                    <h2><i class="fas fa-chart-line"></i> نظرة عامة</h2>
-                    <p>إحصائيات وإنجازات ملف الإنجاز</p>
-                </div>
-                
-                <!-- Stats -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                            <i class="fas fa-book-open"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="totalItems">0</h3>
-                            <p>إجمالي العناصر</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                            <i class="fas fa-images"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="totalImages">0</h3>
-                            <p>عدد الصور</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                            <i class="fas fa-calendar-alt"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="recentItems">0</h3>
-                            <p>هذا الشهر</p>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="completionRate">0%</h3>
-                            <p>معدل الإنجاز</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Recent Items -->
-                <div class="recent-items">
-                    <h3><i class="fas fa-history"></i> أحدث الإضافات</h3>
-                    <div class="items-grid" id="recentItemsGrid">
-                        <!-- سيتم تعبئتها بالبيانات -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Arabic Section -->
-            <section id="arabic" class="tab-content">
-                <div class="section-header">
-                    <div class="section-title">
-                        <div class="section-icon">
-                            <i class="fas fa-book"></i>
-                        </div>
-                        <div>
-                            <h2>اللغة العربية</h2>
-                            <p>حروف وأنشطة اللغة العربية</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-primary" onclick="addItem('arabic')">
-                        <i class="fas fa-plus"></i> إضافة حرف
+    <!-- Main Content (يظهر فقط بعد التسجيل) -->
+    <div id="mainContent" style="display: none;">
+        <!-- Navigation -->
+        <nav class="navigation">
+            <div class="container">
+                <div class="nav-tabs">
+                    <button class="nav-tab active" data-tab="all">
+                        <i class="fas fa-home"></i> الرئيسية
+                    </button>
+                    <button class="nav-tab" data-tab="arabic">
+                        <i class="fas fa-book"></i> العربية
+                    </button>
+                    <button class="nav-tab" data-tab="english">
+                        <i class="fas fa-language"></i> الإنجليزية
+                    </button>
+                    <button class="nav-tab" data-tab="quran">
+                        <i class="fas fa-book-quran"></i> القرآن
+                    </button>
+                    <button class="nav-tab" data-tab="math">
+                        <i class="fas fa-calculator"></i> الرياضيات
+                    </button>
+                    <button class="nav-tab" data-tab="science">
+                        <i class="fas fa-flask"></i> العلوم
+                    </button>
+                    <button class="nav-tab" data-tab="activities">
+                        <i class="fas fa-chalkboard-teacher"></i> النشاطات
                     </button>
                 </div>
-                
-                <!-- Arabic Items Grid -->
-                <div class="items-grid" id="arabicItems">
-                    <div class="empty-state">
-                        <i class="fas fa-book-open"></i>
-                        <h3>لا توجد حروف مضافة</h3>
-                        <p>ابدأ بإضافة أول حرف عربي</p>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <!-- Dashboard -->
+                <section id="all" class="tab-content active">
+                    <div class="section-header">
+                        <h2><i class="fas fa-chart-line"></i> نظرة عامة</h2>
+                        <p>إحصائيات وإنجازات ملف الإنجاز</p>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="totalItems">0</h3>
+                                <p>إجمالي العناصر</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                <i class="fas fa-images"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="totalImages">0</h3>
+                                <p>عدد الصور</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="recentItems">0</h3>
+                                <p>هذا الشهر</p>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="completionRate">0%</h3>
+                                <p>معدل الإنجاز</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Items -->
+                    <div class="recent-items">
+                        <h3><i class="fas fa-history"></i> أحدث الإضافات</h3>
+                        <div class="items-grid" id="recentItemsGrid">
+                            <!-- سيتم تعبئتها بالبيانات -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Arabic Section -->
+                <section id="arabic" class="tab-content">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <div class="section-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div>
+                                <h2>اللغة العربية</h2>
+                                <p>حروف وأنشطة اللغة العربية</p>
+                            </div>
+                        </div>
                         <button class="btn btn-primary" onclick="addItem('arabic')">
-                            <i class="fas fa-plus"></i> إضافة حرف جديد
+                            <i class="fas fa-plus"></i> إضافة حرف
                         </button>
                     </div>
-                </div>
-            </section>
+                    
+                    <!-- Arabic Items Grid -->
+                    <div class="items-grid" id="arabicItems">
+                        <div class="empty-state">
+                            <i class="fas fa-book-open"></i>
+                            <h3>لا توجد حروف مضافة</h3>
+                            <p>ابدأ بإضافة أول حرف عربي</p>
+                            <button class="btn btn-primary" onclick="addItem('arabic')">
+                                <i class="fas fa-plus"></i> إضافة حرف جديد
+                            </button>
+                        </div>
+                    </div>
+                </section>
 
-            <!-- English Section -->
-            <section id="english" class="tab-content">
-                <div class="section-header">
-                    <div class="section-title">
-                        <div class="section-icon">
+                <!-- English Section -->
+                <section id="english" class="tab-content">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <div class="section-icon">
+                                <i class="fas fa-language"></i>
+                            </div>
+                            <div>
+                                <h2>اللغة الإنجليزية</h2>
+                                <p>كلمات وأنشطة اللغة الإنجليزية</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addItem('english')">
+                            <i class="fas fa-plus"></i> إضافة كلمة
+                        </button>
+                    </div>
+                    
+                    <div class="items-grid" id="englishItems">
+                        <div class="empty-state">
                             <i class="fas fa-language"></i>
-                        </div>
-                        <div>
-                            <h2>اللغة الإنجليزية</h2>
-                            <p>كلمات وأنشطة اللغة الإنجليزية</p>
+                            <h3>لا توجد كلمات مضافة</h3>
+                            <p>ابدأ بإضافة أول كلمة إنجليزية</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('english')">
-                        <i class="fas fa-plus"></i> إضافة كلمة
-                    </button>
-                </div>
-                
-                <div class="items-grid" id="englishItems">
-                    <div class="empty-state">
-                        <i class="fas fa-language"></i>
-                        <h3>لا توجد كلمات مضافة</h3>
-                        <p>ابدأ بإضافة أول كلمة إنجليزية</p>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Quran Section -->
-            <section id="quran" class="tab-content">
-                <div class="section-header">
-                    <div class="section-title">
-                        <div class="section-icon">
+                <!-- Quran Section -->
+                <section id="quran" class="tab-content">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <div class="section-icon">
+                                <i class="fas fa-book-quran"></i>
+                            </div>
+                            <div>
+                                <h2>القرآن الكريم</h2>
+                                <p>سور وأنشطة القرآن الكريم</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addItem('quran')">
+                            <i class="fas fa-plus"></i> إضافة سورة
+                        </button>
+                    </div>
+                    
+                    <div class="items-grid" id="quranItems">
+                        <div class="empty-state">
                             <i class="fas fa-book-quran"></i>
-                        </div>
-                        <div>
-                            <h2>القرآن الكريم</h2>
-                            <p>سور وأنشطة القرآن الكريم</p>
+                            <h3>لا توجد سور مضافة</h3>
+                            <p>ابدأ بإضافة أول سورة قرآنية</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('quran')">
-                        <i class="fas fa-plus"></i> إضافة سورة
-                    </button>
-                </div>
-                
-                <div class="items-grid" id="quranItems">
-                    <div class="empty-state">
-                        <i class="fas fa-book-quran"></i>
-                        <h3>لا توجد سور مضافة</h3>
-                        <p>ابدأ بإضافة أول سورة قرآنية</p>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Math Section -->
-            <section id="math" class="tab-content">
-                <div class="section-header">
-                    <div class="section-title">
-                        <div class="section-icon">
+                <!-- Math Section -->
+                <section id="math" class="tab-content">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <div class="section-icon">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div>
+                                <h2>الرياضيات</h2>
+                                <p>مفاهيم وأنشطة الرياضيات</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addItem('math')">
+                            <i class="fas fa-plus"></i> إضافة مفهوم
+                        </button>
+                    </div>
+                    
+                    <div class="items-grid" id="mathItems">
+                        <div class="empty-state">
                             <i class="fas fa-calculator"></i>
-                        </div>
-                        <div>
-                            <h2>الرياضيات</h2>
-                            <p>مفاهيم وأنشطة الرياضيات</p>
+                            <h3>لا توجد مفاهيم مضافة</h3>
+                            <p>ابدأ بإضافة أول مفهوم رياضي</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('math')">
-                        <i class="fas fa-plus"></i> إضافة مفهوم
-                    </button>
-                </div>
-                
-                <div class="items-grid" id="mathItems">
-                    <div class="empty-state">
-                        <i class="fas fa-calculator"></i>
-                        <h3>لا توجد مفاهيم مضافة</h3>
-                        <p>ابدأ بإضافة أول مفهوم رياضي</p>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Science Section -->
-            <section id="science" class="tab-content">
-                <div class="section-header">
-                    <div class="section-title">
-                        <div class="section-icon">
+                <!-- Science Section -->
+                <section id="science" class="tab-content">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <div class="section-icon">
+                                <i class="fas fa-flask"></i>
+                            </div>
+                            <div>
+                                <h2>العلوم</h2>
+                                <p>تجارب وأنشطة العلوم</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addItem('science')">
+                            <i class="fas fa-plus"></i> إضافة تجربة
+                        </button>
+                    </div>
+                    
+                    <div class="items-grid" id="scienceItems">
+                        <div class="empty-state">
                             <i class="fas fa-flask"></i>
-                        </div>
-                        <div>
-                            <h2>العلوم</h2>
-                            <p>تجارب وأنشطة العلوم</p>
+                            <h3>لا توجد تجارب مضافة</h3>
+                            <p>ابدأ بإضافة أول تجربة علمية</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('science')">
-                        <i class="fas fa-plus"></i> إضافة تجربة
-                    </button>
-                </div>
-                
-                <div class="items-grid" id="scienceItems">
-                    <div class="empty-state">
-                        <i class="fas fa-flask"></i>
-                        <h3>لا توجد تجارب مضافة</h3>
-                        <p>ابدأ بإضافة أول تجربة علمية</p>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Activities Section -->
-            <section id="activities" class="tab-content">
-                <div class="section-header">
-                    <div class="section-title">
-                        <div class="section-icon">
+                <!-- Activities Section -->
+                <section id="activities" class="tab-content">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <div class="section-icon">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                            <div>
+                                <h2>النشاطات المدرسية</h2>
+                                <p>إنجازات وأنشطة المعلمة</p>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addItem('activities')">
+                            <i class="fas fa-plus"></i> إضافة نشاط
+                        </button>
+                    </div>
+                    
+                    <div class="items-grid" id="activitiesItems">
+                        <div class="empty-state">
                             <i class="fas fa-chalkboard-teacher"></i>
-                        </div>
-                        <div>
-                            <h2>النشاطات المدرسية</h2>
-                            <p>إنجازات وأنشطة المعلمة</p>
+                            <h3>لا توجد نشاطات مضافة</h3>
+                            <p>ابدأ بإضافة أول نشاط مدرسي</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="addItem('activities')">
-                        <i class="fas fa-plus"></i> إضافة نشاط
-                    </button>
-                </div>
-                
-                <div class="items-grid" id="activitiesItems">
-                    <div class="empty-state">
-                        <i class="fas fa-chalkboard-teacher"></i>
-                        <h3>لا توجد نشاطات مضافة</h3>
-                        <p>ابدأ بإضافة أول نشاط مدرسي</p>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </main>
+                </section>
+            </div>
+        </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-info">
-                    <h3><i class="fas fa-graduation-cap"></i> ملف الإنجاز الرقمي</h3>
-                    <p>المعلمة فريال عبدالله الغماري - ابتدائية النخبة</p>
-                </div>
-                <div class="footer-stats">
-                    <p>العام الدراسي: ١٤٤٥ - ١٤٤٦ هـ</p>
-                    <p>تم التطوير باستخدام HTML5 & Cloudinary</p>
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-info">
+                        <h3><i class="fas fa-graduation-cap"></i> ملف الإنجاز الرقمي</h3>
+                        <p>المعلمة فريال عبدالله الغماري - ابتدائية النخبة</p>
+                    </div>
+                    <div class="footer-stats">
+                        <p>العام الدراسي: ١٤٤٥ - ١٤٤٦ هـ</p>
+                        <p>تم التطوير باستخدام Firebase & Cloudinary</p>
+                        <p id="userEmail"></p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </footer>
+        </footer>
+    </div>
 
     <!-- Add Item Modal -->
     <div class="modal" id="addModal">
@@ -388,18 +431,33 @@
         </div>
     </div>
 
-    <!-- Cloudinary Configuration -->
+    <!-- Firebase Configuration -->
     <script>
+        // Firebase Configuration - استخدم البيانات الخاصة بك
+        const firebaseConfig = {
+            apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
+            authDomain: "teacher-portfolio-fryal.firebaseapp.com",
+            projectId: "teacher-portfolio-fryal",
+            storageBucket: "teacher-portfolio-fryal.firebasestorage.app",
+            messagingSenderId: "1054582250352",
+            appId: "1:1054582250352:web:0fbb6f5a8c2763ffcc4db5",
+            measurementId: "G-74HC2DH4YP"
+        };
+
         // Cloudinary Configuration
         const CLOUDINARY_CONFIG = {
             cloudName: 'djnzshpmw',
             apiKey: '636981539296531',
-            // API Secret يتم استخدامه فقط من خلال Upload Preset
-            uploadPreset: 'ml_default' // ستحتاج إلى إنشاء هذا في لوحة تحكم Cloudinary
+            uploadPreset: 'ml_default'
         };
 
-        // مفتاح التخزين الرئيسي في Cloudinary
-        const PORTFOLIO_FILE_NAME = 'teacher_portfolio_data.json';
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        console.log("✅ Firebase initialized");
     </script>
 
     <!-- Main Script -->

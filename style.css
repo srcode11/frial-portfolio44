@@ -858,3 +858,157 @@ body {
         max-height: 150px !important;
     }
 }
+/* ===== LOGIN SECTION ===== */
+.login-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px 20px;
+}
+
+.login-container {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 50px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.login-header {
+    margin-bottom: 40px;
+}
+
+.login-header i {
+    font-size: 4rem;
+    color: var(--primary);
+    margin-bottom: 20px;
+    display: block;
+}
+
+.login-header h2 {
+    font-size: 2rem;
+    color: var(--dark);
+    margin-bottom: 10px;
+}
+
+.login-header p {
+    color: var(--gray);
+    font-size: 1.2rem;
+}
+
+.login-form {
+    margin-top: 30px;
+}
+
+.login-form h3 {
+    font-size: 1.5rem;
+    color: var(--dark);
+    margin-bottom: 30px;
+    text-align: right;
+}
+
+.login-form .form-group {
+    margin-bottom: 25px;
+    text-align: right;
+}
+
+.login-form label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--dark);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid var(--light-gray);
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: 'Tajawal', sans-serif;
+    transition: var(--transition);
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+.login-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--light-gray);
+    border-radius: 10px;
+    text-align: right;
+}
+
+.login-info p {
+    color: var(--gray);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.login-info i {
+    color: var(--primary);
+}
+
+/* ===== IMAGE UPLOAD STYLES ===== */
+.image-upload-group {
+    margin-top: 10px;
+}
+
+.upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 150px;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.upload-placeholder:hover {
+    border-color: var(--primary);
+    background: rgba(67, 97, 238, 0.05);
+}
+
+.upload-placeholder i {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    color: #aaa;
+}
+
+.upload-placeholder span {
+    font-size: 0.9rem;
+}
+
+.btn-small {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    margin-top: 10px;
+    background: var(--light-gray);
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-small:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* ===== بقية الأنماط من الملف السابق تبقى كما هي ===== */

@@ -11,10 +11,8 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDKs (الإصدار المتوافق) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <!-- Cloudinary Upload Widget -->
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
@@ -28,20 +26,13 @@
                     <i class="fas fa-graduation-cap"></i>
                     <div class="logo-text">
                         <h1>ملف إنجاز المعلمة</h1>
-                        <h2>فريال عبدالله الغماري</h2>
+                        <h2>فريال الغماري</h2>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-primary" onclick="showSubjectSelection()">
+                    <button class="btn btn-primary" onclick="showAddModal()">
                         <i class="fas fa-plus"></i> إضافة جديد
                     </button>
-                    <button class="btn btn-secondary" onclick="exportData()" title="تصدير البيانات">
-                        <i class="fas fa-download"></i> تصدير
-                    </button>
-                    <label class="btn btn-secondary" style="cursor: pointer;">
-                        <i class="fas fa-upload"></i> استيراد
-                        <input type="file" accept=".json" onchange="importData(event)" style="display: none;">
-                    </label>
                     <button class="btn btn-secondary" onclick="printPortfolio()">
                         <i class="fas fa-print"></i> طباعة
                     </button>
@@ -153,19 +144,21 @@
                             <p>حروف وأنشطة اللغة العربية</p>
                         </div>
                     </div>
-                    <div>
-                        <button class="btn btn-primary" onclick="addItem('arabic')" style="margin-left: 10px;">
-                            <i class="fas fa-plus"></i> إضافة حرف
-                        </button>
-                        <button class="btn btn-warning" onclick="clearSectionData('arabic')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
-                            <i class="fas fa-trash-alt"></i> حذف القسم
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" onclick="addItem('arabic')">
+                        <i class="fas fa-plus"></i> إضافة حرف
+                    </button>
                 </div>
                 
                 <!-- Arabic Items Grid -->
                 <div class="items-grid" id="arabicItems">
-                    <!-- سيتم تعبئتها بالبيانات -->
+                    <div class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <h3>لا توجد حروف مضافة</h3>
+                        <p>ابدأ بإضافة أول حرف عربي</p>
+                        <button class="btn btn-primary" onclick="addItem('arabic')">
+                            <i class="fas fa-plus"></i> إضافة حرف جديد
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -181,18 +174,17 @@
                             <p>كلمات وأنشطة اللغة الإنجليزية</p>
                         </div>
                     </div>
-                    <div>
-                        <button class="btn btn-primary" onclick="addItem('english')" style="margin-left: 10px;">
-                            <i class="fas fa-plus"></i> إضافة كلمة
-                        </button>
-                        <button class="btn btn-warning" onclick="clearSectionData('english')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
-                            <i class="fas fa-trash-alt"></i> حذف القسم
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" onclick="addItem('english')">
+                        <i class="fas fa-plus"></i> إضافة كلمة
+                    </button>
                 </div>
                 
                 <div class="items-grid" id="englishItems">
-                    <!-- سيتم تعبئتها بالبيانات -->
+                    <div class="empty-state">
+                        <i class="fas fa-language"></i>
+                        <h3>لا توجد كلمات مضافة</h3>
+                        <p>ابدأ بإضافة أول كلمة إنجليزية</p>
+                    </div>
                 </div>
             </section>
 
@@ -208,18 +200,17 @@
                             <p>سور وأنشطة القرآن الكريم</p>
                         </div>
                     </div>
-                    <div>
-                        <button class="btn btn-primary" onclick="addItem('quran')" style="margin-left: 10px;">
-                            <i class="fas fa-plus"></i> إضافة سورة
-                        </button>
-                        <button class="btn btn-warning" onclick="clearSectionData('quran')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
-                            <i class="fas fa-trash-alt"></i> حذف القسم
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" onclick="addItem('quran')">
+                        <i class="fas fa-plus"></i> إضافة سورة
+                    </button>
                 </div>
                 
                 <div class="items-grid" id="quranItems">
-                    <!-- سيتم تعبئتها بالبيانات -->
+                    <div class="empty-state">
+                        <i class="fas fa-book-quran"></i>
+                        <h3>لا توجد سور مضافة</h3>
+                        <p>ابدأ بإضافة أول سورة قرآنية</p>
+                    </div>
                 </div>
             </section>
 
@@ -235,18 +226,17 @@
                             <p>مفاهيم وأنشطة الرياضيات</p>
                         </div>
                     </div>
-                    <div>
-                        <button class="btn btn-primary" onclick="addItem('math')" style="margin-left: 10px;">
-                            <i class="fas fa-plus"></i> إضافة مفهوم
-                        </button>
-                        <button class="btn btn-warning" onclick="clearSectionData('math')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
-                            <i class="fas fa-trash-alt"></i> حذف القسم
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" onclick="addItem('math')">
+                        <i class="fas fa-plus"></i> إضافة مفهوم
+                    </button>
                 </div>
                 
                 <div class="items-grid" id="mathItems">
-                    <!-- سيتم تعبئتها بالبيانات -->
+                    <div class="empty-state">
+                        <i class="fas fa-calculator"></i>
+                        <h3>لا توجد مفاهيم مضافة</h3>
+                        <p>ابدأ بإضافة أول مفهوم رياضي</p>
+                    </div>
                 </div>
             </section>
 
@@ -262,18 +252,17 @@
                             <p>تجارب وأنشطة العلوم</p>
                         </div>
                     </div>
-                    <div>
-                        <button class="btn btn-primary" onclick="addItem('science')" style="margin-left: 10px;">
-                            <i class="fas fa-plus"></i> إضافة تجربة
-                        </button>
-                        <button class="btn btn-warning" onclick="clearSectionData('science')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
-                            <i class="fas fa-trash-alt"></i> حذف القسم
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" onclick="addItem('science')">
+                        <i class="fas fa-plus"></i> إضافة تجربة
+                    </button>
                 </div>
                 
                 <div class="items-grid" id="scienceItems">
-                    <!-- سيتم تعبئتها بالبيانات -->
+                    <div class="empty-state">
+                        <i class="fas fa-flask"></i>
+                        <h3>لا توجد تجارب مضافة</h3>
+                        <p>ابدأ بإضافة أول تجربة علمية</p>
+                    </div>
                 </div>
             </section>
 
@@ -289,18 +278,17 @@
                             <p>إنجازات وأنشطة المعلمة</p>
                         </div>
                     </div>
-                    <div>
-                        <button class="btn btn-primary" onclick="addItem('activities')" style="margin-left: 10px;">
-                            <i class="fas fa-plus"></i> إضافة نشاط
-                        </button>
-                        <button class="btn btn-warning" onclick="clearSectionData('activities')" style="background: #ff9800; color: white; border: none; padding: 12px 25px; border-radius: var(--border-radius); cursor: pointer;">
-                            <i class="fas fa-trash-alt"></i> حذف القسم
-                        </button>
-                    </div>
+                    <button class="btn btn-primary" onclick="addItem('activities')">
+                        <i class="fas fa-plus"></i> إضافة نشاط
+                    </button>
                 </div>
                 
                 <div class="items-grid" id="activitiesItems">
-                    <!-- سيتم تعبئتها بالبيانات -->
+                    <div class="empty-state">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        <h3>لا توجد نشاطات مضافة</h3>
+                        <p>ابدأ بإضافة أول نشاط مدرسي</p>
+                    </div>
                 </div>
             </section>
         </div>
@@ -316,7 +304,7 @@
                 </div>
                 <div class="footer-stats">
                     <p>العام الدراسي: ١٤٤٥ - ١٤٤٦ هـ</p>
-                    <p id="connectionStatus">النظام يعمل في الوضع المحلي</p>
+                    <p>تم التطوير باستخدام HTML5 & Cloudinary</p>
                 </div>
             </div>
         </div>
@@ -332,6 +320,7 @@
             <div class="modal-body">
                 <form id="itemForm">
                     <input type="hidden" id="itemSubject">
+                    <input type="hidden" id="itemId">
                     
                     <div class="form-group">
                         <label for="itemName">العنوان</label>
@@ -345,27 +334,35 @@
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label>الصورة الأولى (اختياري)</label>
-                            <div class="file-upload">
-                                <input type="file" id="image1" accept="image/*" class="file-input">
-                                <label for="image1" class="file-label">
-                                    <i class="fas fa-upload"></i>
-                                    <span>اختر صورة</span>
-                                </label>
+                            <label>الصورة الأولى</label>
+                            <div class="image-upload-group">
+                                <div class="image-preview" id="preview1">
+                                    <div class="upload-placeholder" onclick="openUploadWidget('image1')">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>انقر لرفع صورة</span>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="image1Url">
+                                <button type="button" class="btn btn-small" onclick="openUploadWidget('image1')">
+                                    <i class="fas fa-upload"></i> رفع صورة
+                                </button>
                             </div>
-                            <div class="image-preview" id="preview1"></div>
                         </div>
                         
                         <div class="form-group">
-                            <label>الصورة الثانية (اختياري)</label>
-                            <div class="file-upload">
-                                <input type="file" id="image2" accept="image/*" class="file-input">
-                                <label for="image2" class="file-label">
-                                    <i class="fas fa-upload"></i>
-                                    <span>اختر صورة</span>
-                                </label>
+                            <label>الصورة الثانية</label>
+                            <div class="image-upload-group">
+                                <div class="image-preview" id="preview2">
+                                    <div class="upload-placeholder" onclick="openUploadWidget('image2')">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>انقر لرفع صورة</span>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="image2Url">
+                                <button type="button" class="btn btn-small" onclick="openUploadWidget('image2')">
+                                    <i class="fas fa-upload"></i> رفع صورة
+                                </button>
                             </div>
-                            <div class="image-preview" id="preview2"></div>
                         </div>
                     </div>
                     
@@ -391,43 +388,18 @@
         </div>
     </div>
 
-    <!-- Firebase Configuration -->
+    <!-- Cloudinary Configuration -->
     <script>
-        // التحقق من وجود Firebase
-        if (typeof firebase !== 'undefined') {
-            try {
-                // Firebase Configuration
-                const firebaseConfig = {
-                    apiKey: "AIzaSyDLJPdy0F4W6iqkUCnKw1jc2CCeGNe5cBU",
-                    authDomain: "teacher-portfolio-fryal.firebaseapp.com",
-                    projectId: "teacher-portfolio-fryal",
-                    storageBucket: "teacher-portfolio-fryal.firebasestorage.app",
-                    messagingSenderId: "1054582250352",
-                    appId: "1:1054582250352:web:0fbb6f5a8c2763ffcc4db5",
-                    measurementId: "G-74HC2DH4YP"
-                };
+        // Cloudinary Configuration
+        const CLOUDINARY_CONFIG = {
+            cloudName: 'djnzshpmw',
+            apiKey: '636981539296531',
+            // API Secret يتم استخدامه فقط من خلال Upload Preset
+            uploadPreset: 'ml_default' // ستحتاج إلى إنشاء هذا في لوحة تحكم Cloudinary
+        };
 
-                // Initialize Firebase
-                const app = firebase.initializeApp(firebaseConfig);
-                const db = firebase.firestore();
-                const storage = firebase.storage();
-                
-                window.firebaseApp = app;
-                window.firebaseDb = db;
-                window.firebaseStorage = storage;
-                
-                console.log("✅ Firebase تم التهيئة بنجاح");
-                
-            } catch (error) {
-                console.log("⚠️ خطأ في تهيئة Firebase:", error.message);
-                window.firebaseDb = null;
-                window.firebaseStorage = null;
-            }
-        } else {
-            console.log("📴 Firebase غير متوفر، سيعمل التطبيق في الوضع المحلي");
-            window.firebaseDb = null;
-            window.firebaseStorage = null;
-        }
+        // مفتاح التخزين الرئيسي في Cloudinary
+        const PORTFOLIO_FILE_NAME = 'teacher_portfolio_data.json';
     </script>
 
     <!-- Main Script -->

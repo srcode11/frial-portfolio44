@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         setupEventListeners();
         
         // 2. تحميل البيانات من السحابة فقط
-        loadFromFirebaseOnly();
+        loadFromCloudOnly();
         
         console.log('✅ تم تهيئة التطبيق بنجاح');
         
@@ -48,7 +48,7 @@ function setupEventListeners() {
     // نموذج الإضافة
     document.getElementById('itemForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        saveItemToFirebaseOnly();
+        saveToCloud();
     });
     
     // معاينة الصور
@@ -60,28 +60,23 @@ function setupEventListeners() {
         previewImage(e.target, 'preview2');
     });
     
-    // زر إعادة تحميل البيانات
-    document.querySelector('.btn-secondary[onclick*="sync"]')?.addEventListener('click', function() {
-        loadFromFirebaseOnly();
-    });
-    
     console.log('✅ تم إعداد واجهة المستخدم');
 }
 
 // ==============================================
-// 🌟 النظام الجديد: Firebase فقط - بدون تخزين محلي
+// ☁️ النظام النهائي: السحابة فقط
 // ==============================================
 
-// تحميل البيانات من Firebase فقط
-async function loadFromFirebaseOnly() {
+// تحميل البيانات من السحابة فقط
+async function loadFromCloudOnly() {
     console.log('📥 جاري تحميل البيانات من السحابة...');
-    
-    showToast('جارٍ تحميل البيانات من السحابة...', 'info');
     
     try {
         if (!window.firebaseDb) {
             throw new Error('Firebase غير متاح');
         }
+        
+        showToast('جارٍ تحميل البيانات...', 'info');
         
         // إعادة تعيين البيانات
         portfolioData = {
@@ -93,7 +88,7 @@ async function loadFromFirebaseOnly() {
             activities: []
         };
         
-        // جلب البيانات بدون ترتيب أولي لتجنب مشاكل الـ Index
+        // جلب البيانات مباشرة
         const querySnapshot = await window.firebaseDb
             .collection('portfolio_items')
             .get();
@@ -109,15 +104,14 @@ async function loadFromFirebaseOnly() {
                 }
             });
             
-            // ترتيب البيانات محلياً حسب التاريخ
+            // ترتيب البيانات محلياً
             Object.keys(portfolioData).forEach(subject => {
                 portfolioData[subject].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
             });
             
-            const totalItems = querySnapshot.size;
-            console.log(`✅ تم تحميل ${totalItems} عنصر من السحابة`);
+            console.log(`✅ تم تحميل ${querySnapshot.size} عنصر من السحابة`);
             isFirebaseConnected = true;
-            showToast(`تم تحميل ${totalItems} عنصر من السحابة`, 'success');
+            showToast('تم تحميل البيانات بنجاح', 'success');
         } else {
             console.log('📭 لا توجد بيانات في السحابة');
             isFirebaseConnected = true;
@@ -127,17 +121,17 @@ async function loadFromFirebaseOnly() {
         updateDashboard();
         
     } catch (error) {
-        console.error('❌ فشل تحميل السحابة:', error.message);
+        console.warn('⚠️ فشل تحميل السحابة:', error.message);
         isFirebaseConnected = false;
-        showToast('فشل الاتصال بالسحابة: ' + error.message, 'error');
+        showToast('فشل الاتصال بالسحابة، تأكد من اتصالك بالإنترنت', 'error');
         
         // عرض حالة فارغة
         updateDashboard();
     }
 }
 
-// حفظ العنصر في Firebase فقط
-async function saveItemToFirebaseOnly() {
+// حفظ العنصر في السحابة فقط
+async function saveToCloud() {
     console.log('💾 جاري حفظ العنصر في السحابة...');
     
     const subject = document.getElementById('itemSubject').value;
@@ -155,22 +149,11 @@ async function saveItemToFirebaseOnly() {
         // إنشاء معرف فريد للعنصر
         const itemId = `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        // معالجة الصور (تحويل إلى Base64)
+        // معالجة الصور (Base64 مباشرة)
         const imageUrls = [];
         
         const image1 = document.getElementById('image1').files[0];
         const image2 = document.getElementById('image2').files[0];
-        
-        // تحويل الصور إلى Base64
-        const convertToBase64 = (file) => {
-            return new Promise((resolve, reject) => {
-                if (!file) resolve(null);
-                const reader = new FileReader();
-                reader.onload = e => resolve(e.target.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        };
         
         if (image1) {
             const url1 = await convertToBase64(image1);
@@ -211,7 +194,7 @@ async function saveItemToFirebaseOnly() {
                 break;
         }
         
-        // حفظ في Firebase فقط - بدون تخزين محلي
+        // حفظ في Firebase فقط
         await window.firebaseDb.collection('portfolio_items').doc(itemId).set(itemData);
         
         // إضافة إلى البيانات المحلية للتحديث الفوري
@@ -232,59 +215,66 @@ async function saveItemToFirebaseOnly() {
         console.error('❌ خطأ في حفظ العنصر:', error);
         
         if (error.message.includes('quota') || error.message.includes('QuotaExceeded')) {
-            showToast('تم تجاوز السعة التخزينية للسحابة', 'error');
+            showToast('البيانات كبيرة جداً، يرجى تقليل حجم الصور', 'error');
         } else if (error.message.includes('permission')) {
-            showToast('ليس لديك صلاحية للحفظ في السحابة', 'error');
+            showToast('لا يوجد صلاحية للحفظ، يرجى التحقق من إعدادات Firebase', 'error');
         } else {
-            showToast('حدث خطأ في حفظ العنصر: ' + error.message, 'error');
+            showToast('حدث خطأ في حفظ العنصر', 'error');
         }
     }
 }
 
+// تحويل الصورة إلى Base64
+function convertToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            resolve(e.target.result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 // ==============================================
-// 🔧 باقي الدوال الأساسية
+// 🔄 باقي الدوال
 // ==============================================
 
 // تحديث لوحة التحكم
 function updateDashboard() {
     console.log('📊 تحديث لوحة التحكم...');
     
-    try {
-        // حساب الإحصائيات
-        const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
-        const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
-            sum + arr.reduce((imgSum, item) => imgSum + (item.imageUrls ? item.imageUrls.length : 0), 0), 0);
-        
-        const thisMonth = new Date().getMonth();
-        const thisYear = new Date().getFullYear();
-        const recentItems = Object.values(portfolioData).reduce((sum, arr) => 
-            sum + arr.filter(item => {
-                const itemDate = new Date(item.timestamp || Date.now());
-                return itemDate.getMonth() === thisMonth && itemDate.getFullYear() === thisYear;
-            }).length, 0);
-        
-        // تحديث DOM
-        document.getElementById('totalItems').textContent = totalItems;
-        document.getElementById('totalImages').textContent = totalImages;
-        document.getElementById('recentItems').textContent = recentItems;
-        
-        const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 50) * 100)) : 0;
-        document.getElementById('completionRate').textContent = `${completionRate}%`;
-        
-        // تحديث حالة الاتصال
-        updateConnectionStatus();
-        
-        // تحديث العناصر الحديثة
-        updateRecentItems();
-        
-        // تحديث كل قسم
-        Object.keys(portfolioData).forEach(subject => {
-            updateSection(subject);
-        });
-        
-    } catch (error) {
-        console.error('❌ خطأ في تحديث لوحة التحكم:', error);
-    }
+    // حساب الإحصائيات
+    const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
+    const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
+        sum + arr.reduce((imgSum, item) => imgSum + (item.imageUrls ? item.imageUrls.length : 0), 0), 0);
+    
+    const thisMonth = new Date().getMonth();
+    const thisYear = new Date().getFullYear();
+    const recentItems = Object.values(portfolioData).reduce((sum, arr) => 
+        sum + arr.filter(item => {
+            const itemDate = new Date(item.timestamp || Date.now());
+            return itemDate.getMonth() === thisMonth && itemDate.getFullYear() === thisYear;
+        }).length, 0);
+    
+    // تحديث DOM
+    document.getElementById('totalItems').textContent = totalItems;
+    document.getElementById('totalImages').textContent = totalImages;
+    document.getElementById('recentItems').textContent = recentItems;
+    
+    const completionRate = totalItems > 0 ? Math.min(100, Math.floor((totalItems / 100) * 100)) : 0;
+    document.getElementById('completionRate').textContent = `${completionRate}%`;
+    
+    // تحديث حالة الاتصال
+    updateConnectionStatus();
+    
+    // تحديث العناصر الحديثة
+    updateRecentItems();
+    
+    // تحديث كل قسم
+    Object.keys(portfolioData).forEach(subject => {
+        updateSection(subject);
+    });
 }
 
 // تحديث حالة الاتصال
@@ -304,56 +294,42 @@ function updateRecentItems() {
     const container = document.getElementById('recentItemsGrid');
     if (!container) return;
     
-    try {
-        // جمع جميع العناصر
-        const allItems = [];
-        Object.keys(portfolioData).forEach(subject => {
-            portfolioData[subject].forEach(item => {
-                allItems.push({
-                    ...item,
-                    subject: subject
-                });
+    // جمع جميع العناصر
+    const allItems = [];
+    Object.keys(portfolioData).forEach(subject => {
+        portfolioData[subject].forEach(item => {
+            allItems.push({
+                ...item,
+                subject: subject
             });
         });
-        
-        // ترتيب حسب التاريخ (الأحدث أولاً)
-        allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        
-        // أخذ 6 عناصر فقط
-        const recentItems = allItems.slice(0, 6);
-        
-        // مسح المحتوى القديم
-        container.innerHTML = '';
-        
-        if (recentItems.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <h3>لا توجد عناصر حديثة</h3>
-                    <p>ابدأ بإضافة عناصر جديدة إلى ملف الإنجاز</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // إضافة العناصر الحديثة
-        recentItems.forEach(item => {
-            const card = createItemCard(item, item.subject);
-            container.appendChild(card);
-        });
-        
-    } catch (error) {
-        console.error('❌ خطأ في تحديث العناصر الحديثة:', error);
+    });
+    
+    // ترتيب حسب التاريخ (الأحدث أولاً)
+    allItems.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    
+    // أخذ 6 عناصر فقط
+    const recentItems = allItems.slice(0, 6);
+    
+    // مسح المحتوى القديم
+    container.innerHTML = '';
+    
+    if (recentItems.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>حدث خطأ في تحميل البيانات</h3>
-                <button class="btn btn-primary" onclick="loadFromFirebaseOnly()">
-                    <i class="fas fa-redo"></i> إعادة تحميل
-                </button>
+                <i class="fas fa-inbox"></i>
+                <h3>لا توجد عناصر حديثة</h3>
+                <p>ابدأ بإضافة عناصر جديدة إلى ملف الإنجاز</p>
             </div>
         `;
+        return;
     }
+    
+    // إضافة العناصر الحديثة
+    recentItems.forEach(item => {
+        const card = createItemCard(item, item.subject);
+        container.appendChild(card);
+    });
 }
 
 // تبديل التبويب
@@ -395,101 +371,72 @@ function updateSection(subject) {
     const container = document.getElementById(`${subject}Items`);
     if (!container) return;
     
-    try {
-        const items = portfolioData[subject] || [];
-        
-        // مسح المحتوى القديم
-        container.innerHTML = '';
-        
-        if (items.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <i class="${getSubjectIcon(subject)}"></i>
-                    <h3>لا توجد عناصر</h3>
-                    <p>لم يتم إضافة أي عناصر إلى هذا القسم بعد</p>
-                    <button class="btn btn-primary" onclick="addItem('${subject}')">
-                        <i class="fas fa-plus"></i> إضافة أول عنصر
-                    </button>
-                </div>
-            `;
-            return;
-        }
-        
-        // إضافة العناصر
-        items.forEach(item => {
-            const card = createItemCard(item, subject);
-            container.appendChild(card);
-        });
-        
-    } catch (error) {
-        console.error(`❌ خطأ في تحديث قسم ${subject}:`, error);
+    const items = portfolioData[subject] || [];
+    
+    // مسح المحتوى القديم
+    container.innerHTML = '';
+    
+    if (items.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>حدث خطأ في تحميل القسم</h3>
-                <button class="btn btn-primary" onclick="loadFromFirebaseOnly()">
-                    <i class="fas fa-redo"></i> إعادة تحميل
+                <i class="${getSubjectIcon(subject)}"></i>
+                <h3>لا توجد عناصر</h3>
+                <p>لم يتم إضافة أي عناصر إلى هذا القسم بعد</p>
+                <button class="btn btn-primary" onclick="addItem('${subject}')">
+                    <i class="fas fa-plus"></i> إضافة أول عنصر
                 </button>
             </div>
         `;
+        return;
     }
+    
+    // إضافة العناصر
+    items.forEach(item => {
+        const card = createItemCard(item, subject);
+        container.appendChild(card);
+    });
 }
 
 // إنشاء بطاقة عنصر
 function createItemCard(item, subject) {
-    try {
-        const card = document.createElement('div');
-        card.className = 'item-card';
-        card.dataset.id = item.id;
-        
-        const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
-        const date = item.date || formatDate(new Date(item.timestamp || Date.now()));
-        
-        // استخدام صور افتراضية إذا كانت الصور فارغة
-        const image1 = item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : getDefaultImage(subject, 1);
-        const image2 = item.imageUrls && item.imageUrls[1] ? item.imageUrls[1] : getDefaultImage(subject, 2);
-        
-        card.innerHTML = `
-            <div class="item-header">
-                <div class="item-title">${escapeHtml(title)}</div>
-                <div class="item-date">${escapeHtml(date)}</div>
-            </div>
-            <div class="item-body">
-                <div class="item-description">${escapeHtml(item.description || 'لا يوجد وصف')}</div>
-                <div class="item-images">
-                    <div class="item-image" onclick="viewImage('${escapeHtml(image1)}')">
-                        <img src="${escapeHtml(image1)}" alt="الصورة الأولى" loading="lazy" 
-                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
-                    </div>
-                    <div class="item-image" onclick="viewImage('${escapeHtml(image2)}')">
-                        <img src="${escapeHtml(image2)}" alt="الصورة الثانية" loading="lazy"
-                             onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
-                    </div>
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.dataset.id = item.id;
+    
+    const title = item.letter || item.surah || item.concept || item.title || 'عنصر جديد';
+    const date = item.date || formatDate(new Date(item.timestamp || Date.now()));
+    
+    // استخدام صور افتراضية إذا كانت الصور فارغة
+    const image1 = item.imageUrls && item.imageUrls[0] ? item.imageUrls[0] : getDefaultImage(subject, 1);
+    const image2 = item.imageUrls && item.imageUrls[1] ? item.imageUrls[1] : getDefaultImage(subject, 2);
+    
+    card.innerHTML = `
+        <div class="item-header">
+            <div class="item-title">${title}</div>
+            <div class="item-date">${date}</div>
+        </div>
+        <div class="item-body">
+            <div class="item-description">${item.description || 'لا يوجد وصف'}</div>
+            <div class="item-images">
+                <div class="item-image" onclick="viewImage('${image1}')">
+                    <img src="${image1}" alt="الصورة الأولى" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
                 </div>
-                <div class="item-actions">
-                    <button class="action-btn edit" onclick="editItem('${subject}', '${escapeHtml(item.id)}')">
-                        <i class="fas fa-edit"></i> تعديل
-                    </button>
-                    <button class="action-btn delete" onclick="deleteItem('${subject}', '${escapeHtml(item.id)}')">
-                        <i class="fas fa-trash"></i> حذف
-                    </button>
+                <div class="item-image" onclick="viewImage('${image2}')">
+                    <img src="${image2}" alt="الصورة الثانية" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=400&q=80'">
                 </div>
             </div>
-        `;
-        
-        return card;
-        
-    } catch (error) {
-        console.error('❌ خطأ في إنشاء بطاقة العنصر:', error);
-        return document.createElement('div'); // بطاقة فارغة
-    }
-}
-
-// تهريب النصوص HTML
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+            <div class="item-actions">
+                <button class="action-btn edit" onclick="editItem('${subject}', '${item.id}')">
+                    <i class="fas fa-edit"></i> تعديل
+                </button>
+                <button class="action-btn delete" onclick="deleteItem('${subject}', '${item.id}')">
+                    <i class="fas fa-trash"></i> حذف
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return card;
 }
 
 // الحصول على صورة افتراضية حسب القسم
@@ -562,8 +509,6 @@ function addItem(subject) {
     document.getElementById('itemForm').reset();
     document.getElementById('preview1').innerHTML = '';
     document.getElementById('preview2').innerHTML = '';
-    delete document.getElementById('itemForm').dataset.editId;
-    delete document.getElementById('itemForm').dataset.editMode;
     
     // إظهار النموذج
     document.getElementById('addModal').style.display = 'flex';
@@ -574,16 +519,9 @@ function previewImage(input, previewId) {
     const file = input.files[0];
     if (!file) return;
     
-    // التحقق من حجم الصورة (3MB كحد أقصى لتجنب مشاكل السعة)
-    if (file.size > 3 * 1024 * 1024) {
-        showToast('حجم الصورة كبير جداً (الحد الأقصى 3MB)', 'error');
-        input.value = '';
-        return;
-    }
-    
-    // التحقق من نوع الصورة
-    if (!file.type.match('image.*')) {
-        showToast('الرجاء اختيار ملف صورة فقط', 'error');
+    // التحقق من حجم الصورة (5MB كحد أقصى)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('حجم الصورة كبير جداً (الحد الأقصى 5MB)', 'error');
         input.value = '';
         return;
     }
@@ -597,7 +535,7 @@ function previewImage(input, previewId) {
 }
 
 // تعديل العنصر
-function editItem(subject, itemId) {
+async function editItem(subject, itemId) {
     console.log(`✏️ تعديل العنصر: ${itemId}`);
     
     const item = portfolioData[subject].find(i => i.id === itemId);
@@ -623,7 +561,6 @@ function editItem(subject, itemId) {
     
     // حفظ معرف العنصر للنموذج
     document.getElementById('itemForm').dataset.editId = itemId;
-    document.getElementById('itemForm').dataset.editMode = 'true';
 }
 
 // حذف العنصر
@@ -653,7 +590,7 @@ async function deleteItem(subject, itemId) {
         
     } catch (error) {
         console.error('❌ خطأ في حذف العنصر:', error);
-        showToast('حدث خطأ في حذف العنصر: ' + error.message, 'error');
+        showToast('حدث خطأ في حذف العنصر', 'error');
     }
 }
 
@@ -664,12 +601,11 @@ function closeModal() {
     document.getElementById('preview1').innerHTML = '';
     document.getElementById('preview2').innerHTML = '';
     delete document.getElementById('itemForm').dataset.editId;
-    delete document.getElementById('itemForm').dataset.editMode;
 }
 
 // عرض الصورة
 function viewImage(url) {
-    if (!url || url === 'null' || url === 'undefined') return;
+    if (!url) return;
     
     document.getElementById('modalImageView').src = url;
     document.getElementById('imageModal').style.display = 'flex';
@@ -696,10 +632,6 @@ function printPortfolio() {
                 .print-section { margin-bottom: 40px; page-break-inside: avoid; }
                 .print-item { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
                 @page { margin: 2cm; }
-                @media print {
-                    .no-print { display: none; }
-                    body { font-size: 12pt; }
-                }
             </style>
         </head>
         <body>
@@ -731,11 +663,11 @@ function printPortfolio() {
                     </h3>
             `;
             
-            items.forEach((item, index) => {
+            items.forEach(item => {
                 const title = item.letter || item.surah || item.concept || item.title || 'عنصر';
                 printContent += `
                     <div class="print-item">
-                        <h4>${index + 1}. ${escapeHtml(title)}</h4>
+                        <h4>${title}</h4>
                         <p><strong>التاريخ:</strong> ${item.date || 'غير محدد'}</p>
                         <p><strong>الوصف:</strong> ${item.description || 'لا يوجد وصف'}</p>
                     </div>
@@ -747,18 +679,10 @@ function printPortfolio() {
     });
     
     printContent += `
-            <div class="no-print" style="text-align: center; margin-top: 50px; padding: 20px; border-top: 2px solid #ddd;">
-                <button onclick="window.print()" style="padding: 10px 30px; background: #4361ee; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 10px;">
-                    طباعة
-                </button>
-                <button onclick="window.close()" style="padding: 10px 30px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 10px;">
-                    إغلاق
-                </button>
-            </div>
             <script>
-                setTimeout(function() {
-                    window.print();
-                }, 500);
+                window.onload = function() {
+                    setTimeout(() => window.print(), 500);
+                }
             </script>
         </body>
         </html>
@@ -772,36 +696,28 @@ function printPortfolio() {
 
 // تنسيق التاريخ
 function formatDate(date) {
-    try {
-        return date.toLocaleDateString('ar-SA', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    } catch (error) {
-        return 'غير محدد';
-    }
+    return date.toLocaleDateString('ar-SA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 }
 
 // عرض الإشعارات
 function showToast(message, type = 'info') {
-    // إزالة أي إشعارات قديمة
-    document.querySelectorAll('.toast').forEach(toast => toast.remove());
-    
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
     const icons = {
         success: 'fas fa-check-circle',
         error: 'fas fa-exclamation-circle',
-        info: 'fas fa-info-circle',
-        warning: 'fas fa-exclamation-triangle'
+        info: 'fas fa-info-circle'
     };
     
     toast.innerHTML = `
         <i class="${icons[type] || 'fas fa-info-circle'}"></i>
         <div class="toast-content">
-            <div class="toast-title">${type === 'success' ? 'نجاح' : type === 'error' ? 'خطأ' : type === 'warning' ? 'تحذير' : 'معلومة'}</div>
+            <div class="toast-title">${type === 'success' ? 'نجاح' : type === 'error' ? 'خطأ' : 'معلومة'}</div>
             <div class="toast-message">${message}</div>
         </div>
         <button class="toast-close" onclick="this.parentElement.remove()">
@@ -811,7 +727,6 @@ function showToast(message, type = 'info') {
     
     document.body.appendChild(toast);
     
-    // إزالته تلقائياً بعد 5 ثوانٍ
     setTimeout(() => {
         if (toast.parentNode) {
             toast.remove();
@@ -840,29 +755,23 @@ function showSubjectSelection() {
         <div style="background: white; border-radius: 15px; padding: 40px; max-width: 500px; width: 90%; text-align: center;">
             <h3 style="margin-bottom: 30px; color: #333;">اختر القسم</h3>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-                <button onclick="addItem('arabic'); this.closest('.modal').remove()" 
-                        style="padding: 20px; background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%); border: none; border-radius: 10px; color: white; cursor: pointer;">
-                    <i class="fas fa-book"></i><br><span>العربية</span>
+                <button onclick="addItem('arabic'); this.closest('.modal').remove()" style="padding: 20px; background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%); border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <i class="fas fa-book"></i><span>العربية</span>
                 </button>
-                <button onclick="addItem('english'); this.closest('.modal').remove()" 
-                        style="padding: 20px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); border: none; border-radius: 10px; color: white; cursor: pointer;">
-                    <i class="fas fa-language"></i><br><span>الإنجليزية</span>
+                <button onclick="addItem('english'); this.closest('.modal').remove()" style="padding: 20px; background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <i class="fas fa-language"></i><span>الإنجليزية</span>
                 </button>
-                <button onclick="addItem('quran'); this.closest('.modal').remove()" 
-                        style="padding: 20px; background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%); border: none; border-radius: 10px; color: white; cursor: pointer;">
-                    <i class="fas fa-book-quran"></i><br><span>القرآن</span>
+                <button onclick="addItem('quran'); this.closest('.modal').remove()" style="padding: 20px; background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%); border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <i class="fas fa-book-quran"></i><span>القرآن</span>
                 </button>
-                <button onclick="addItem('math'); this.closest('.modal').remove()" 
-                        style="padding: 20px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border: none; border-radius: 10px; color: white; cursor: pointer;">
-                    <i class="fas fa-calculator"></i><br><span>الرياضيات</span>
+                <button onclick="addItem('math'); this.closest('.modal').remove()" style="padding: 20px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <i class="fas fa-calculator"></i><span>الرياضيات</span>
                 </button>
-                <button onclick="addItem('science'); this.closest('.modal').remove()" 
-                        style="padding: 20px; background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); border: none; border-radius: 10px; color: white; cursor: pointer;">
-                    <i class="fas fa-flask"></i><br><span>العلوم</span>
+                <button onclick="addItem('science'); this.closest('.modal').remove()" style="padding: 20px; background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <i class="fas fa-flask"></i><span>العلوم</span>
                 </button>
-                <button onclick="addItem('activities'); this.closest('.modal').remove()" 
-                        style="padding: 20px; background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); border: none; border-radius: 10px; color: white; cursor: pointer;">
-                    <i class="fas fa-chalkboard-teacher"></i><br><span>النشاطات</span>
+                <button onclick="addItem('activities'); this.closest('.modal').remove()" style="padding: 20px; background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); border: none; border-radius: 10px; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <i class="fas fa-chalkboard-teacher"></i><span>النشاطات</span>
                 </button>
             </div>
             <button onclick="this.closest('.modal').remove()" style="margin-top: 30px; padding: 10px 30px; background: #f1f3f5; border: none; border-radius: 8px; color: #666; cursor: pointer;">
@@ -879,12 +788,11 @@ window.switchTab = switchTab;
 window.addItem = addItem;
 window.closeModal = closeModal;
 window.closeImageModal = closeImageModal;
-window.saveItem = saveItemToFirebaseOnly;
+window.saveItem = saveToCloud;
 window.editItem = editItem;
 window.deleteItem = deleteItem;
 window.viewImage = viewImage;
 window.printPortfolio = printPortfolio;
 window.showSubjectSelection = showSubjectSelection;
-window.loadFromFirebaseOnly = loadFromFirebaseOnly;
 
-console.log('🎉 النظام جاهز! يعتمد على السحابة فقط - بدون تخزين محلي');
+console.log('🎉 النظام جاهز! يعتمد على السحابة فقط - لا تخزين محلي');

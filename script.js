@@ -11,19 +11,21 @@ let portfolioData = {
     activities: []
 };
 
-let currentUser = null;
 let currentSubject = null;
 
 // تهيئة التطبيق
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 بدء تهيئة التطبيق...');
     
     try {
-        // 1. مراقبة حالة المصادقة
-        setupAuthListener();
-        
-        // 2. إعداد الأحداث
+        // 1. إعداد الأحداث
         setupEventListeners();
+        
+        // 2. تحميل البيانات من Firebase
+        await loadPortfolioData();
+        
+        // 3. تحديث الواجهة
+        updateDashboard();
         
         console.log('✅ تم تهيئة التطبيق بنجاح');
         
@@ -32,24 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
         showToast('حدث خطأ في تحميل التطبيق', 'error');
     }
 });
-
-// إعداد مراقبة المصادقة
-function setupAuthListener() {
-    auth.onAuthStateChanged(async function(user) {
-        if (user) {
-            // المستخدم مسجل الدخول
-            currentUser = user;
-            console.log('👤 المستخدم مسجل الدخول:', user.email);
-            await loadPortfolioData();
-            showMainContent();
-        } else {
-            // المستخدم غير مسجل الدخول
-            currentUser = null;
-            console.log('👤 لا يوجد مستخدم مسجل');
-            showLoginContent();
-        }
-    });
-}
 
 // إعداد مستمعي الأحداث
 function setupEventListeners() {
@@ -69,64 +53,7 @@ function setupEventListeners() {
         await saveItem();
     });
     
-    // تسجيل الدخول بالضغط على Enter
-    document.getElementById('loginPassword').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            login();
-        }
-    });
-    
     console.log('✅ تم إعداد واجهة المستخدم');
-}
-
-// تسجيل الدخول
-async function login() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    
-    if (!email || !password) {
-        showToast('الرجاء إدخال البريد الإلكتروني وكلمة المرور', 'error');
-        return;
-    }
-    
-    try {
-        showToast('جارٍ تسجيل الدخول...', 'info');
-        
-        await auth.signInWithEmailAndPassword(email, password);
-        showToast('تم تسجيل الدخول بنجاح', 'success');
-        
-    } catch (error) {
-        console.error('❌ خطأ في تسجيل الدخول:', error);
-        let errorMessage = 'حدث خطأ في تسجيل الدخول';
-        
-        switch(error.code) {
-            case 'auth/invalid-email':
-                errorMessage = 'البريد الإلكتروني غير صالح';
-                break;
-            case 'auth/user-disabled':
-                errorMessage = 'هذا الحساب معطّل';
-                break;
-            case 'auth/user-not-found':
-                errorMessage = 'لا يوجد حساب بهذا البريد الإلكتروني';
-                break;
-            case 'auth/wrong-password':
-                errorMessage = 'كلمة المرور غير صحيحة';
-                break;
-        }
-        
-        showToast(errorMessage, 'error');
-    }
-}
-
-// تسجيل الخروج
-async function logout() {
-    try {
-        await auth.signOut();
-        showToast('تم تسجيل الخروج بنجاح', 'success');
-    } catch (error) {
-        console.error('❌ خطأ في تسجيل الخروج:', error);
-        showToast('حدث خطأ في تسجيل الخروج', 'error');
-    }
 }
 
 // تحميل بيانات ملف الإنجاز
@@ -166,8 +93,6 @@ async function loadPortfolioData() {
             };
         }
         
-        updateDashboard();
-        
     } catch (error) {
         console.error('❌ خطأ في تحميل البيانات:', error);
         showToast('حدث خطأ في تحميل البيانات', 'error');
@@ -188,22 +113,6 @@ async function savePortfolioData() {
     } catch (error) {
         console.error('❌ خطأ في حفظ البيانات:', error);
         throw error;
-    }
-}
-
-// عرض واجهة تسجيل الدخول
-function showLoginContent() {
-    document.getElementById('loginSection').style.display = 'block';
-    document.getElementById('mainContent').style.display = 'none';
-}
-
-// عرض المحتوى الرئيسي
-function showMainContent() {
-    document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'block';
-    
-    if (currentUser) {
-        document.getElementById('userEmail').textContent = `المستخدم: ${currentUser.email}`;
     }
 }
 
@@ -463,11 +372,6 @@ function openUploadWidget(inputId) {
 
 // إضافة عنصر
 function addItem(subject) {
-    if (!currentUser) {
-        showToast('الرجاء تسجيل الدخول أولاً', 'error');
-        return;
-    }
-    
     console.log(`➕ إضافة عنصر إلى: ${subject}`);
     
     // تحديد عنوان النموذج
@@ -510,11 +414,6 @@ function addItem(subject) {
 
 // حفظ العنصر
 async function saveItem() {
-    if (!currentUser) {
-        showToast('الرجاء تسجيل الدخول أولاً', 'error');
-        return;
-    }
-    
     console.log('💾 جاري حفظ العنصر...');
     
     const subject = document.getElementById('itemSubject').value;
@@ -540,7 +439,6 @@ async function saveItem() {
             title: name,
             description: description,
             images: [],
-            createdBy: currentUser.email,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -606,11 +504,6 @@ async function saveItem() {
 
 // تعديل العنصر
 function editItem(subject, itemId) {
-    if (!currentUser) {
-        showToast('الرجاء تسجيل الدخول أولاً', 'error');
-        return;
-    }
-    
     console.log(`✏️ تعديل العنصر: ${itemId}`);
     
     const items = portfolioData[subject];
@@ -660,11 +553,6 @@ function editItem(subject, itemId) {
 
 // حذف العنصر
 async function deleteItem(subject, itemId) {
-    if (!currentUser) {
-        showToast('الرجاء تسجيل الدخول أولاً', 'error');
-        return;
-    }
-    
     console.log(`🗑️ حذف العنصر: ${itemId}`);
     
     if (!confirm('هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذه العملية.')) {
@@ -864,7 +752,5 @@ window.deleteItem = deleteItem;
 window.viewImage = viewImage;
 window.printPortfolio = printPortfolio;
 window.openUploadWidget = openUploadWidget;
-window.login = login;
-window.logout = logout;
 
-console.log('🎉 النظام جاهز!');
+console.log('🎉 النظام جاهز بدون تسجيل دخول!');

@@ -8,34 +8,48 @@ let portfolioData = {
     quran: [],
     math: [],
     science: [],
-    activities: [],
-    lastUpdated: new Date().toISOString()
+    activities: []
 };
 
+let currentUser = null;
 let currentSubject = null;
 
 // تهيئة التطبيق
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 بدء تهيئة التطبيق...');
     
     try {
-        // 1. إعداد الأحداث
+        // 1. مراقبة حالة المصادقة
+        setupAuthListener();
+        
+        // 2. إعداد الأحداث
         setupEventListeners();
-        
-        // 2. تحميل البيانات من Cloudinary
-        await loadDataFromCloudinary();
-        
-        // 3. عرض الصفحة الرئيسية
-        updateDashboard();
         
         console.log('✅ تم تهيئة التطبيق بنجاح');
         
     } catch (error) {
         console.error('❌ خطأ في تهيئة التطبيق:', error);
         showToast('حدث خطأ في تحميل التطبيق', 'error');
-        loadSampleDataForDisplay();
     }
 });
+
+// إعداد مراقبة المصادقة
+function setupAuthListener() {
+    auth.onAuthStateChanged(async function(user) {
+        if (user) {
+            // المستخدم مسجل الدخول
+            currentUser = user;
+            console.log('👤 المستخدم مسجل الدخول:', user.email);
+            await loadPortfolioData();
+            showMainContent();
+        } else {
+            // المستخدم غير مسجل الدخول
+            currentUser = null;
+            console.log('👤 لا يوجد مستخدم مسجل');
+            showLoginContent();
+        }
+    });
+}
 
 // إعداد مستمعي الأحداث
 function setupEventListeners() {
@@ -55,128 +69,120 @@ function setupEventListeners() {
         await saveItem();
     });
     
+    // تسجيل الدخول بالضغط على Enter
+    document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            login();
+        }
+    });
+    
     console.log('✅ تم إعداد واجهة المستخدم');
 }
 
-// تحميل البيانات من Cloudinary
-async function loadDataFromCloudinary() {
-    console.log('📥 جاري تحميل البيانات من Cloudinary...');
+// تسجيل الدخول
+async function login() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        showToast('الرجاء إدخال البريد الإلكتروني وكلمة المرور', 'error');
+        return;
+    }
     
     try {
-        // محاولة تحميل ملف JSON من Cloudinary
-        const portfolioUrl = `https://res.cloudinary.com/${CLOUDINARY_CONFIG.cloudName}/raw/upload/v1/${PORTFOLIO_FILE_NAME}`;
+        showToast('جارٍ تسجيل الدخول...', 'info');
         
-        const response = await fetch(portfolioUrl, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
+        await auth.signInWithEmailAndPassword(email, password);
+        showToast('تم تسجيل الدخول بنجاح', 'success');
         
-        if (response.ok) {
-            const data = await response.json();
-            portfolioData = data;
-            console.log('✅ تم تحميل البيانات من Cloudinary:', portfolioData);
-            showToast('تم تحميل البيانات من السحابة', 'success');
+    } catch (error) {
+        console.error('❌ خطأ في تسجيل الدخول:', error);
+        let errorMessage = 'حدث خطأ في تسجيل الدخول';
+        
+        switch(error.code) {
+            case 'auth/invalid-email':
+                errorMessage = 'البريد الإلكتروني غير صالح';
+                break;
+            case 'auth/user-disabled':
+                errorMessage = 'هذا الحساب معطّل';
+                break;
+            case 'auth/user-not-found':
+                errorMessage = 'لا يوجد حساب بهذا البريد الإلكتروني';
+                break;
+            case 'auth/wrong-password':
+                errorMessage = 'كلمة المرور غير صحيحة';
+                break;
+        }
+        
+        showToast(errorMessage, 'error');
+    }
+}
+
+// تسجيل الخروج
+async function logout() {
+    try {
+        await auth.signOut();
+        showToast('تم تسجيل الخروج بنجاح', 'success');
+    } catch (error) {
+        console.error('❌ خطأ في تسجيل الخروج:', error);
+        showToast('حدث خطأ في تسجيل الخروج', 'error');
+    }
+}
+
+// تحميل بيانات ملف الإنجاز
+async function loadPortfolioData() {
+    console.log('📥 جاري تحميل البيانات من Firebase...');
+    
+    try {
+        showToast('جارٍ تحميل البيانات...', 'info');
+        
+        const docRef = db.collection('portfolio').doc('data');
+        const docSnap = await docRef.get();
+        
+        if (docSnap.exists) {
+            portfolioData = docSnap.data();
+            console.log('✅ تم تحميل البيانات من Firebase:', portfolioData);
+            showToast('تم تحميل البيانات بنجاح', 'success');
         } else {
-            // الملف غير موجود، سنخلق ملفاً جديداً
-            console.log('📝 إنشاء ملف جديد في Cloudinary...');
-            await initializePortfolioInCloudinary();
+            // إنشاء وثيقة جديدة
+            await docRef.set({
+                arabic: [],
+                english: [],
+                quran: [],
+                math: [],
+                science: [],
+                activities: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
+            console.log('📝 تم إنشاء ملف جديد في Firebase');
+            portfolioData = {
+                arabic: [],
+                english: [],
+                quran: [],
+                math: [],
+                science: [],
+                activities: []
+            };
         }
+        
+        updateDashboard();
         
     } catch (error) {
-        console.warn('⚠️ فشل تحميل البيانات من Cloudinary:', error.message);
-        
-        // محاولة بديلة: استخدام قاعدة بيانات نصية في Cloudinary
-        try {
-            await loadDataFromCloudinaryDatabase();
-        } catch (dbError) {
-            console.error('❌ فشل تحميل البيانات:', dbError);
-            throw new Error('لا يمكن تحميل البيانات');
-        }
+        console.error('❌ خطأ في تحميل البيانات:', error);
+        showToast('حدث خطأ في تحميل البيانات', 'error');
     }
 }
 
-// طريقة بديلة: تخزين البيانات كقاعدة بيانات نصية في Cloudinary
-async function loadDataFromCloudinaryDatabase() {
-    console.log('🔍 محاولة طريقة بديلة لتحميل البيانات...');
-    
-    // هنا يمكننا استخدام خواص Cloudinary الإضافية
-    // لكن للتبسيط، سنستخدم ملف JSON مباشرة
-    const publicId = `portfolio/${PORTFOLIO_FILE_NAME}`;
-    const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/resources/raw/upload/${publicId}`;
-    
+// حفظ البيانات في Firebase
+async function savePortfolioData() {
     try {
-        const response = await fetch(url);
-        if (response.ok) {
-            const data = await response.json();
-            portfolioData = JSON.parse(data.content || '{}');
-            console.log('✅ تم تحميل البيانات من قاعدة Cloudinary');
-        } else {
-            await initializePortfolioInCloudinary();
-        }
-    } catch (error) {
-        console.error('❌ خطأ في الطريقة البديلة:', error);
-        throw error;
-    }
-}
-
-// تهيئة ملف الإنجاز في Cloudinary
-async function initializePortfolioInCloudinary() {
-    console.log('📝 إنشاء ملف إنجاز جديد...');
-    
-    portfolioData = {
-        arabic: [],
-        english: [],
-        quran: [],
-        math: [],
-        science: [],
-        activities: [],
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
-    };
-    
-    try {
-        // رفع ملف JSON فارغ إلى Cloudinary
-        await saveDataToCloudinary();
-        console.log('✅ تم إنشاء ملف جديد في Cloudinary');
-        showToast('تم إنشاء ملف إنجاز جديد', 'info');
-    } catch (error) {
-        console.error('❌ خطأ في إنشاء الملف:', error);
-        showToast('جارٍ استخدام البيانات المحلية', 'info');
-    }
-}
-
-// حفظ البيانات في Cloudinary
-async function saveDataToCloudinary() {
-    try {
-        // تحويل البيانات إلى JSON
-        const jsonData = JSON.stringify(portfolioData, null, 2);
+        await db.collection('portfolio').doc('data').set({
+            ...portfolioData,
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
         
-        // إنشاء Blob من JSON
-        const blob = new Blob([jsonData], { type: 'application/json' });
-        
-        // إنشاء FormData
-        const formData = new FormData();
-        formData.append('file', blob, PORTFOLIO_FILE_NAME);
-        formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-        formData.append('public_id', `portfolio/${PORTFOLIO_FILE_NAME}`);
-        formData.append('resource_type', 'raw');
-        
-        // رفع الملف إلى Cloudinary
-        const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/raw/upload`,
-            {
-                method: 'POST',
-                body: formData
-            }
-        );
-        
-        if (!response.ok) {
-            throw new Error('فشل في رفع الملف');
-        }
-        
-        console.log('✅ تم حفظ البيانات في Cloudinary');
+        console.log('✅ تم حفظ البيانات في Firebase');
         return true;
         
     } catch (error) {
@@ -185,32 +191,20 @@ async function saveDataToCloudinary() {
     }
 }
 
-// تحميل بيانات نموذجية للعرض فقط
-function loadSampleDataForDisplay() {
-    console.log('📝 جاري تحميل بيانات نموذجية للعرض...');
+// عرض واجهة تسجيل الدخول
+function showLoginContent() {
+    document.getElementById('loginSection').style.display = 'block';
+    document.getElementById('mainContent').style.display = 'none';
+}
+
+// عرض المحتوى الرئيسي
+function showMainContent() {
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
     
-    portfolioData = {
-        arabic: [
-            {
-                id: '1',
-                title: 'حرف الألف',
-                description: 'تعلم حرف الألف مع نشاط الرسم والتلوين',
-                images: [
-                    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=400&q=80',
-                    'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=400&q=80'
-                ],
-                date: '١٤٤٥/٠٣/١٥',
-                timestamp: Date.now()
-            }
-        ],
-        english: [],
-        quran: [],
-        math: [],
-        science: [],
-        activities: []
-    };
-    
-    updateDashboard();
+    if (currentUser) {
+        document.getElementById('userEmail').textContent = `المستخدم: ${currentUser.email}`;
+    }
 }
 
 // تحديث لوحة التحكم
@@ -218,24 +212,17 @@ function updateDashboard() {
     console.log('📊 تحديث لوحة التحكم...');
     
     // حساب الإحصائيات
-    const totalItems = Object.values(portfolioData).reduce((sum, arr) => 
-        Array.isArray(arr) ? sum + arr.length : sum, 0);
-    
-    const totalImages = Object.values(portfolioData).reduce((sum, arr) => {
-        if (!Array.isArray(arr)) return sum;
-        return sum + arr.reduce((imgSum, item) => 
-            imgSum + (item.images ? item.images.length : 0), 0);
-    }, 0);
+    const totalItems = Object.values(portfolioData).reduce((sum, arr) => sum + arr.length, 0);
+    const totalImages = Object.values(portfolioData).reduce((sum, arr) => 
+        sum + arr.reduce((imgSum, item) => imgSum + (item.images ? item.images.length : 0), 0), 0);
     
     const thisMonth = new Date().getMonth();
     const thisYear = new Date().getFullYear();
-    const recentItems = Object.values(portfolioData).reduce((sum, arr) => {
-        if (!Array.isArray(arr)) return sum;
-        return sum + arr.filter(item => {
+    const recentItems = Object.values(portfolioData).reduce((sum, arr) => 
+        sum + arr.filter(item => {
             const itemDate = new Date(item.timestamp || Date.now());
             return itemDate.getMonth() === thisMonth && itemDate.getFullYear() === thisYear;
-        }).length;
-    }, 0);
+        }).length, 0);
     
     // تحديث DOM
     document.getElementById('totalItems').textContent = totalItems;
@@ -250,9 +237,7 @@ function updateDashboard() {
     
     // تحديث كل قسم
     Object.keys(portfolioData).forEach(subject => {
-        if (Array.isArray(portfolioData[subject])) {
-            updateSection(subject);
-        }
+        updateSection(subject);
     });
 }
 
@@ -264,14 +249,12 @@ function updateRecentItems() {
     // جمع جميع العناصر
     const allItems = [];
     Object.keys(portfolioData).forEach(subject => {
-        if (Array.isArray(portfolioData[subject])) {
-            portfolioData[subject].forEach(item => {
-                allItems.push({
-                    ...item,
-                    subject: subject
-                });
+        portfolioData[subject].forEach(item => {
+            allItems.push({
+                ...item,
+                subject: subject
             });
-        }
+        });
     });
     
     // ترتيب حسب التاريخ (الأحدث أولاً)
@@ -480,6 +463,11 @@ function openUploadWidget(inputId) {
 
 // إضافة عنصر
 function addItem(subject) {
+    if (!currentUser) {
+        showToast('الرجاء تسجيل الدخول أولاً', 'error');
+        return;
+    }
+    
     console.log(`➕ إضافة عنصر إلى: ${subject}`);
     
     // تحديد عنوان النموذج
@@ -522,6 +510,11 @@ function addItem(subject) {
 
 // حفظ العنصر
 async function saveItem() {
+    if (!currentUser) {
+        showToast('الرجاء تسجيل الدخول أولاً', 'error');
+        return;
+    }
+    
     console.log('💾 جاري حفظ العنصر...');
     
     const subject = document.getElementById('itemSubject').value;
@@ -546,7 +539,10 @@ async function saveItem() {
             date: new Date().toLocaleDateString('ar-SA'),
             title: name,
             description: description,
-            images: []
+            images: [],
+            createdBy: currentUser.email,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
         };
         
         // إضافة حقل خاص حسب القسم
@@ -579,18 +575,19 @@ async function saveItem() {
             // تحديث عنصر موجود
             const index = portfolioData[subject].findIndex(i => i.id === itemId);
             if (index !== -1) {
-                portfolioData[subject][index] = item;
+                portfolioData[subject][index] = {
+                    ...portfolioData[subject][index],
+                    ...item,
+                    updatedAt: new Date().toISOString()
+                };
             }
         } else {
             // إضافة عنصر جديد
             portfolioData[subject].push(item);
         }
         
-        // تحديث تاريخ التعديل
-        portfolioData.lastUpdated = new Date().toISOString();
-        
-        // حفظ في Cloudinary
-        await saveDataToCloudinary();
+        // حفظ في Firebase
+        await savePortfolioData();
         
         // تحديث الواجهة
         updateDashboard();
@@ -609,6 +606,11 @@ async function saveItem() {
 
 // تعديل العنصر
 function editItem(subject, itemId) {
+    if (!currentUser) {
+        showToast('الرجاء تسجيل الدخول أولاً', 'error');
+        return;
+    }
+    
     console.log(`✏️ تعديل العنصر: ${itemId}`);
     
     const items = portfolioData[subject];
@@ -658,6 +660,11 @@ function editItem(subject, itemId) {
 
 // حذف العنصر
 async function deleteItem(subject, itemId) {
+    if (!currentUser) {
+        showToast('الرجاء تسجيل الدخول أولاً', 'error');
+        return;
+    }
+    
     console.log(`🗑️ حذف العنصر: ${itemId}`);
     
     if (!confirm('هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذه العملية.')) {
@@ -671,11 +678,8 @@ async function deleteItem(subject, itemId) {
         if (portfolioData[subject] && Array.isArray(portfolioData[subject])) {
             portfolioData[subject] = portfolioData[subject].filter(item => item.id !== itemId);
             
-            // تحديث تاريخ التعديل
-            portfolioData.lastUpdated = new Date().toISOString();
-            
-            // حفظ في Cloudinary
-            await saveDataToCloudinary();
+            // حفظ في Firebase
+            await savePortfolioData();
             
             // تحديث الواجهة
             updateDashboard();
@@ -740,14 +744,11 @@ function printPortfolio() {
                 <h2>فريال عبدالله الغماري</h2>
                 <p>ابتدائية النخبة - العام الدراسي ١٤٤٥-١٤٤٦ هـ</p>
                 <p>تاريخ الطباعة: ${new Date().toLocaleDateString('ar-SA')}</p>
-                <p>آخر تحديث: ${new Date(portfolioData.lastUpdated).toLocaleDateString('ar-SA')}</p>
             </div>
     `;
     
     // إضافة كل قسم
     Object.keys(portfolioData).forEach(subject => {
-        if (subject === 'lastUpdated' || subject === 'createdAt') return;
-        
         const items = portfolioData[subject];
         if (items && items.length > 0) {
             const subjectNames = {
@@ -863,5 +864,7 @@ window.deleteItem = deleteItem;
 window.viewImage = viewImage;
 window.printPortfolio = printPortfolio;
 window.openUploadWidget = openUploadWidget;
+window.login = login;
+window.logout = logout;
 
-console.log('🎉 النظام جاهز! يعتمد على Cloudinary فقط.');
+console.log('🎉 النظام جاهز!');
